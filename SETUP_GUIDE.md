@@ -9,6 +9,9 @@ Before starting, make sure you have:
 - [ ] Python 3.9 or higher (`python --version`)
 - [ ] Node.js 20 or higher (`node --version`)
 - [ ] A Google Gemini API key ([Get one here](https://ai.google.dev/))
+- [ ] An ElevenLabs API key (for text-to-speech) ([Get one here](https://elevenlabs.io/))
+
+**Note:** FFmpeg is automatically installed with the Python dependencies - no manual installation needed!
 
 ## 📝 Step-by-Step Setup
 
@@ -113,6 +116,7 @@ Once both servers are running:
 4. Click "Analyze Video"
 5. Wait 30-60 seconds for AI analysis
 6. View the extracted highlights in the table!
+7. A new video with AI-generated commentary will be saved to `videos/generated-videos/`
 
 ## 🐛 Common Issues
 
@@ -129,6 +133,7 @@ Once both servers are running:
 - Ensure your Gemini API key is valid and has credits
 - Check that the video file is not corrupted
 - Video must be in MP4 format
+- If you get FFmpeg errors, make sure `pip install -r requirements.txt` completed successfully
 
 ### Port already in use
 **Backend (port 8000):**
@@ -159,6 +164,7 @@ futbolito-mvp/
 │   │   └── types/
 │   └── package.json
 ├── videos/            # Your .mp4 files go here
+│   └── generated-videos/  # AI-generated commentary videos
 └── .env              # Your API keys (don't commit!)
 ```
 
@@ -179,6 +185,7 @@ Press `Ctrl+C` in each terminal window to stop the servers.
 2. **Video Length**: Shorter videos (< 5 minutes) analyze faster
 3. **API Limits**: Gemini API has rate limits - avoid analyzing too many videos rapidly
 4. **Development**: Both servers support hot reload - changes will auto-refresh
+5. **FFmpeg**: Automatically bundled with the Python dependencies - works on all platforms!
 
 ## 🤝 Need Help?
 

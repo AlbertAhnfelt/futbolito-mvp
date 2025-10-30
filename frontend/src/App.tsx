@@ -23,6 +23,7 @@ function App() {
   const [videos, setVideos] = useState<string[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<string>('');
   const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [generatedVideo, setGeneratedVideo] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string>('');
@@ -55,10 +56,12 @@ function App() {
     setAnalyzing(true);
     setError('');
     setHighlights([]);
+    setGeneratedVideo('');
 
     try {
       const results = await videoApi.analyzeVideo(selectedVideo);
-      setHighlights(results);
+      setHighlights(results.highlights);
+      setGeneratedVideo(results.generated_video);
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.detail || err.message || 'Analysis failed';
@@ -86,6 +89,23 @@ function App() {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
+    },
+    {
+      title: 'Commentary',
+      dataIndex: 'commentary',
+      key: 'commentary',
+      render: (text: string, record: Highlight) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ flex: 1 }}>{text}</span>
+          {record.audio_base64 && (
+            <audio
+              controls
+              style={{ height: '32px' }}
+              src={`data:audio/mpeg;base64,${record.audio_base64}`}
+            />
+          )}
+        </div>
+      ),
     },
   ];
 
@@ -183,26 +203,64 @@ function App() {
             </Card>
           )}
 
-          {highlights.length > 0 && !analyzing && (
-            <Card
-              title={
-                <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
-                  Football Highlights
-                </Title>
+          {generatedVideo && !analyzing && (
+            <Alert
+              message="Video Generated Successfully!"
+              description={
+                <div>
+                  Commentary video has been generated and saved to:{' '}
+                  <Text code>{`videos/generated-videos/${generatedVideo}`}</Text>
+                </div>
               }
-              style={{ borderRadius: 8 }}
-            >
-              <Table
-                columns={columns}
-                dataSource={highlights}
-                rowKey={(record, index) => `${record.start_time}-${index}`}
-                pagination={{
-                  pageSize: 10,
-                  showSizeChanger: true,
-                  showTotal: (total) => `Total ${total} highlights`,
-                }}
-              />
-            </Card>
+              type="success"
+              showIcon
+              style={{ marginBottom: 24 }}
+            />
+          )}
+
+          {highlights.length > 0 && !analyzing && (
+            <>
+              <Card
+                title={
+                  <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
+                    Football Highlights
+                  </Title>
+                }
+                style={{ borderRadius: 8, marginBottom: 24 }}
+              >
+                <Table
+                  columns={columns}
+                  dataSource={highlights}
+                  rowKey={(record, index) => `${record.start_time}-${index}`}
+                  pagination={{
+                    pageSize: 10,
+                    showSizeChanger: true,
+                    showTotal: (total) => `Total ${total} highlights`,
+                  }}
+                />
+              </Card>
+
+              {generatedVideo && (
+                <Card
+                  title={
+                    <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
+                      Generated Commentary Video
+                    </Title>
+                  }
+                  style={{ borderRadius: 8 }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <video
+                      controls
+                      style={{ width: '100%', maxWidth: '800px', borderRadius: 8 }}
+                      src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/videos/generated/${generatedVideo}`}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                </Card>
+              )}
+            </>
           )}
         </div>
       </Content>

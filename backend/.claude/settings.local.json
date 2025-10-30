@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Aspel/Documents/Programmering/futbolito-mvp/frontend/**)",
+      "Read(//c/Users/Aspel/Documents/Programmering/futbolito-mvp/**)",
+      "Bash(find:*)",
+      "Bash(ffmpeg:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

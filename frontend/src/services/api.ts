@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Highlight, AnalyzeRequest } from '../types';
+import type { AnalyzeResponse, AnalyzeRequest } from '../types';
 
 // Configure API base URL - update this for production
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
@@ -21,11 +21,11 @@ export const videoApi = {
   },
 
   /**
-   * Analyze a video and get highlights
+   * Analyze a video and get highlights with generated commentary video
    */
-  analyzeVideo: async (filename: string): Promise<Highlight[]> => {
+  analyzeVideo: async (filename: string): Promise<AnalyzeResponse> => {
     const payload: AnalyzeRequest = { filename };
-    const response = await apiClient.post<Highlight[]>('/analyze', payload);
+    const response = await apiClient.post<AnalyzeResponse>('/analyze', payload);
     return response.data;
   },
 };
