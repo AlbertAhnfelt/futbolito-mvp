@@ -1,0 +1,28 @@
+#root {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.ant-layout {
+  background: #f0f9f4;
+}
+
+.ant-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ant-btn-primary:hover {
+  background: #5aa876 !important;
+  border-color: #5aa876 !important;
+}
+
+.ant-table-thead > tr > th {
+  background: #6fbf8b !important;
+  color: white !important;
+  font-weight: 600;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: #f8fcfa !important;
+}
