@@ -6,12 +6,14 @@ import subprocess
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
-from elevenlabs import ElevenLabs
 from imageio_ffmpeg import get_ffmpeg_exe
 from . import GEMINI_API_KEY, ELEVENLABS_API_KEY
+from .audio.tts_generator import TTSGenerator
+from .graph_llm.orchestrator import GraphOrchestrator
 
 
 def parse_time_to_seconds(time_str: str) -> float:
@@ -78,47 +80,11 @@ class Highlight(BaseModel):
     end_time: str
     description: str
     commentary: str
-    audio_base64: str | None = None
+    audio_base64: Optional[str] = None
 
 
-def generate_tts_audio(text: str, voice_id: str) -> str:
-    """
-    Generate TTS audio using ElevenLabs API and return as base64 string.
-
-    Args:
-        text: The text to convert to speech
-        voice_id: The ElevenLabs voice ID to use
-
-    Returns:
-        Base64 encoded audio data
-    """
-    try:
-        if not ELEVENLABS_API_KEY:
-            raise ValueError("ELEVENLABS_API_KEY not found in environment variables")
-
-        client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
-
-        # Generate audio using ElevenLabs API
-        audio_generator = client.text_to_speech.convert(
-            voice_id=voice_id,
-            text=text,
-            model_id="eleven_multilingual_v2"
-        )
-
-        # Collect all audio chunks
-        audio_bytes = b''
-        for chunk in audio_generator:
-            audio_bytes += chunk
-
-        # Convert to base64
-        audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
-
-        return audio_base64
-
-    except Exception as e:
-        print(f"Warning: TTS generation failed for text: {text[:50]}...")
-        print(f"Error: {str(e)}")
-        return ""
+# TTS generation is now handled by audio.tts_generator.TTSGenerator
+# Initialize TTS generator (will be created per request in analyze_video)
 
 
 def generate_commentary_video(video_path: Path, highlights: list) -> str:
@@ -303,72 +269,57 @@ async def analyze_video(filename: str):
         
         file_uri = uploaded_file.uri
         
-        # Analyze video with Gemini
-        response = client.models.generate_content(
-            model='models/gemini-2.5-flash',
-            contents=types.Content(
-                parts=[
-                    types.Part(
-                        file_data=types.FileData(file_uri=file_uri)
-                    ),
-                    types.Part(text="""
-                    Here is a short clip of a football match. Identify important events in the video.
-
-                    IMPORTANT: Analyze ONLY the visual content of the video. DO NOT use any audio, commentary, or sound from the video.
-                    Base your analysis purely on what you can see: player movements, ball trajectory, tackles, passes, shots, celebrations, etc.
-
-                    For each event explain what happens in the video based solely on visual observation.
-                    Only identify players if you can visually recognize them (jersey numbers, physical appearance, playing style).
-                    Describe precisely what happened with football technical language based on visual analysis only.
-
-                    For each highlight return a json with this format :
-                    {
-                      start_time : "00:00:00",
-                      end_time : "00:00:00",
-                      description : "XXX",
-                      commentary : "XXX"
-                    }
-
-                    The 'description' field should contain technical analysis of what happens.
-                    In the 'commentary' field, you are an english TV commentator describing the events briefly.
-                    CRITICAL: The commentary must be short enough to say within the event's duration (end_time - start_time).
-                    Use approximately 2-3 words per second maximum. For a 5-second event, use ~12 words. For 20 seconds, use ~50 words.
-                    No insignificant sentences, only punchy event description and analysis.
-
-                    DO NOT RETURN ANY OTHER TEXT.
-                    """)
-                ]
-            ),
-            config={
-                "response_mime_type": "application/json",
-                "response_schema": list[Highlight],
-            },
-        )
+        # ============================================================
+        # NEW: Use Graph-Based LLM System for Analysis
+        # ============================================================
+        print("\n🎬 Using Graph-Based Commentary System")
+        orchestrator = GraphOrchestrator(api_key=GEMINI_API_KEY)
         
-        # Parse JSON response
-        highlights = json.loads(response.text)
+        # Process video through graph system
+        node_outputs, metadata = orchestrator.process_video(file_uri)
+        
+        # Convert NodeOutput objects to highlight format
+        highlights = []
+        for output in node_outputs:
+            highlights.append({
+                'start_time': output.start_time,
+                'end_time': output.end_time,
+                'description': output.description,
+                'commentary': output.commentary,
+                'intensity': output.intensity,
+                'node_used': output.node_used
+            })
 
         # Validate commentary durations
         highlights = validate_commentary_duration(highlights)
 
         # Generate TTS audio for each highlight's commentary
         print("Generating TTS audio for commentary...")
-        voice_id = "nrD2uNU2IUYtedZegcGx"  # The voice ID provided by user
-
-        for i, highlight in enumerate(highlights):
-            print(f"Generating audio for highlight {i+1}/{len(highlights)}...")
-            audio_base64 = generate_tts_audio(highlight['commentary'], voice_id)
-            highlight['audio_base64'] = audio_base64
+        if ELEVENLABS_API_KEY:
+            tts_generator = TTSGenerator(
+                api_key=ELEVENLABS_API_KEY,
+                default_voice_id="nrD2uNU2IUYtedZegcGx"
+            )
+            
+            for i, highlight in enumerate(highlights):
+                print(f"Generating audio for highlight {i+1}/{len(highlights)}...")
+                audio_base64 = tts_generator.generate_audio(highlight['commentary'])
+                highlight['audio_base64'] = audio_base64
+        else:
+            print("⚠️  ELEVENLABS_API_KEY not found, skipping TTS generation")
+            for highlight in highlights:
+                highlight['audio_base64'] = ""
 
         # Generate video with commentary
         print("Generating video with commentary...")
         output_filename = generate_commentary_video(video_path, highlights)
         print(f"Commentary video saved as: {output_filename}")
 
-        # Add output filename to response
+        # Add output filename and metadata to response
         return {
             'highlights': highlights,
-            'generated_video': output_filename
+            'generated_video': output_filename,
+            'metadata': metadata
         }
     
     except Exception as e:
