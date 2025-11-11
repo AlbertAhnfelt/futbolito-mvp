@@ -93,7 +93,7 @@ Return ONLY valid JSON. No other text.
             segments = [VideoSegment(**seg) for seg in segments_data]
             
             # Log summary
-            print(f"\n📊 Pace Detection Summary:")
+            print(f"\n[PACE] Detection Summary:")
             print(f"   Total segments: {len(segments)}")
             
             intensity_counts = {}
@@ -110,7 +110,7 @@ Return ONLY valid JSON. No other text.
             return segments
         
         except Exception as e:
-            print(f"⚠️  Pace detection failed: {str(e)}")
+            print(f"[WARN] Pace detection failed: {str(e)}")
             # Return single segment covering whole video as fallback
             return [VideoSegment(
                 start_time="00:00:00",

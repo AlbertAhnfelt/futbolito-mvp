@@ -11,9 +11,82 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel
 from imageio_ffmpeg import get_ffmpeg_exe
-from . import GEMINI_API_KEY, ELEVENLABS_API_KEY
+from . import GEMINI_API_KEY, ELEVENLABS_API_KEY, DEBUG_COMMENTARY_ONLY
 from .audio.tts_generator import TTSGenerator
 from .graph_llm.orchestrator import GraphOrchestrator
+
+
+def ensure_video_has_audio(video_path: Path) -> Path:
+    """
+    Ensure video has an audio track. If not, add a silent audio track.
+
+    This prevents Gemini API errors when processing muted videos.
+
+    Args:
+        video_path: Path to the video file
+
+    Returns:
+        Path to video with audio (either original or a temp file with audio added)
+    """
+    try:
+        ffmpeg_exe = get_ffmpeg_exe()
+
+        # Check if video has audio track
+        probe_cmd = [
+            ffmpeg_exe, '-i', str(video_path),
+            '-show_streams', '-select_streams', 'a',
+            '-loglevel', 'error'
+        ]
+
+        result = subprocess.run(
+            probe_cmd,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='replace'
+        )
+
+        # If there's no audio stream, add silent audio
+        if not result.stdout or 'Stream' not in result.stdout:
+            print("WARNING: Video has no audio track. Adding silent audio...")
+
+            # Create a temporary file with audio
+            temp_dir = Path(tempfile.gettempdir())
+            temp_video = temp_dir / f"video_with_audio_{video_path.stem}.mp4"
+
+            # Add silent audio track
+            cmd = [
+                ffmpeg_exe, '-y',
+                '-i', str(video_path),
+                '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono',
+                '-c:v', 'copy',
+                '-c:a', 'aac',
+                '-shortest',
+                str(temp_video)
+            ]
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                encoding='utf-8',
+                errors='replace',
+                check=False
+            )
+
+            if result.returncode != 0:
+                print(f"Warning: Failed to add audio track: {result.stderr}")
+                return video_path
+
+            print(f"SUCCESS: Silent audio track added: {temp_video}")
+            return temp_video
+        else:
+            print("SUCCESS: Video already has audio track")
+            return video_path
+
+    except Exception as e:
+        print(f"Warning: Could not check/add audio: {str(e)}")
+        return video_path
 
 
 def parse_time_to_seconds(time_str: str) -> float:
@@ -65,7 +138,7 @@ def validate_commentary_duration(highlights: list) -> list:
                     truncated = truncated.rsplit(punct, 1)[0] + punct
                     break
 
-            print(f"⚠️ Highlight {highlight['start_time']}-{highlight['end_time']}: "
+            print(f"[WARN] Highlight {highlight['start_time']}-{highlight['end_time']}: "
                   f"Truncated commentary from {len(commentary_words)} to {max_words} words "
                   f"(duration: {duration:.1f}s)")
 
@@ -143,7 +216,27 @@ def generate_commentary_video(video_path: Path, highlights: list) -> str:
                 })
 
             if not audio_files:
-                raise ValueError("No valid audio files found in highlights")
+                print(f"[WARN]  No valid audio files found!")
+                print(f"   Total highlights: {len(highlights)}")
+                print(f"   Highlights with audio: 0")
+                for i, h in enumerate(highlights):
+                    has_audio = "[YES]" if h.get('audio_base64') else "[NO]"
+                    print(f"   Highlight {i+1}: {has_audio}")
+                print(f"")
+                print(f"[INFO]  Generating video without commentary audio...")
+                print(f"   TTS generation failed for all segments (likely quota issue).")
+                print(f"   The video will be created with original audio only.")
+                print(f"   Check your ElevenLabs quota and try again when credits are available.")
+                print(f"")
+
+                # Instead of raising error, create video with original audio only
+                # Just copy the original video as the output
+                import shutil
+                output_path = video_path.parent / f"{video_path.stem}_commented.mp4"
+                shutil.copy(video_path, output_path)
+
+                print(f"[OK] Video saved (original audio only): {output_path.name}")
+                return output_path.name
 
             # Build ffmpeg command using bundled executable
             # Strategy: delay each audio and mix all together, allowing overlaps
@@ -239,13 +332,17 @@ async def analyze_video(filename: str):
         # Get video path
         videos_dir = Path(__file__).parent.parent.parent.parent / 'videos'
         video_path = videos_dir / filename
-        
+
         if not video_path.exists():
             raise FileNotFoundError(f"Video file {filename} not found")
-        
+
+        # Ensure video has audio (add silent audio if needed)
+        # This prevents Gemini API errors on muted videos
+        video_path_with_audio = ensure_video_has_audio(video_path)
+
         # Upload video to Gemini File API
-        print(f"Uploading video: {video_path}")
-        uploaded_file = client.files.upload(file=str(video_path))
+        print(f"Uploading video: {video_path_with_audio}")
+        uploaded_file = client.files.upload(file=str(video_path_with_audio))
         file_name = uploaded_file.name
         
         # Wait for file to be processed and become ACTIVE
@@ -293,20 +390,67 @@ async def analyze_video(filename: str):
         # Validate commentary durations
         highlights = validate_commentary_duration(highlights)
 
+        # ============================================================
+        # DEBUG MODE: Skip TTS and video generation if enabled
+        # ============================================================
+        if DEBUG_COMMENTARY_ONLY:
+            print("\n" + "=" * 60)
+            print("🔧 DEBUG MODE: Commentary-Only Mode Enabled")
+            print("=" * 60)
+            print("Skipping TTS audio generation and video creation.")
+            print("Returning commentary text only.")
+            print(f"\nGenerated {len(highlights)} commentary segments:")
+            for i, h in enumerate(highlights):
+                print(f"\n  [{i+1}] {h['start_time']} - {h['end_time']}")
+                print(f"      Intensity: {h['intensity']}/10 | Node: {h['node_used']}")
+                print(f"      Commentary: {h['commentary']}")
+            print("\n" + "=" * 60)
+            print("To disable debug mode: Remove DEBUG_COMMENTARY_ONLY from .env")
+            print("=" * 60 + "\n")
+
+            # Return just the highlights without audio or video
+            return {
+                'highlights': highlights,
+                'generated_video': None,
+                'metadata': metadata,
+                'debug_mode': True
+            }
+
         # Generate TTS audio for each highlight's commentary
         print("Generating TTS audio for commentary...")
         if ELEVENLABS_API_KEY:
-            tts_generator = TTSGenerator(
-                api_key=ELEVENLABS_API_KEY,
-                default_voice_id="nrD2uNU2IUYtedZegcGx"
-            )
-            
-            for i, highlight in enumerate(highlights):
-                print(f"Generating audio for highlight {i+1}/{len(highlights)}...")
-                audio_base64 = tts_generator.generate_audio(highlight['commentary'])
-                highlight['audio_base64'] = audio_base64
+            try:
+                tts_generator = TTSGenerator(
+                    api_key=ELEVENLABS_API_KEY,
+                    default_voice_id="nrD2uNU2IUYtedZegcGx"
+                )
+
+                quota_error_detected = False
+                for i, highlight in enumerate(highlights):
+                    print(f"Generating audio for highlight {i+1}/{len(highlights)}...")
+                    print(f"  Commentary text: {highlight['commentary'][:100]}...")
+                    audio_base64 = tts_generator.generate_audio(highlight['commentary'])
+                    if audio_base64:
+                        print(f"  [OK] Audio generated ({len(audio_base64)} chars)")
+                        highlight['audio_base64'] = audio_base64
+                    else:
+                        print(f"  [WARN]  TTS returned empty audio for highlight {i+1}")
+                        highlight['audio_base64'] = ""
+
+                        # If first attempt fails, it's likely a quota issue
+                        if i == 0:
+                            quota_error_detected = True
+                            print(f"")
+                            print(f"[WARN]  First TTS request failed - likely a quota or API issue.")
+                            print(f"   Continuing to process remaining segments, but video may have no audio.")
+                            print(f"")
+            except Exception as e:
+                print(f"[WARN]  TTS generation failed: {str(e)}")
+                print(traceback.format_exc())
+                for highlight in highlights:
+                    highlight['audio_base64'] = ""
         else:
-            print("⚠️  ELEVENLABS_API_KEY not found, skipping TTS generation")
+            print("[WARN]  ELEVENLABS_API_KEY not found, skipping TTS generation")
             for highlight in highlights:
                 highlight['audio_base64'] = ""
 

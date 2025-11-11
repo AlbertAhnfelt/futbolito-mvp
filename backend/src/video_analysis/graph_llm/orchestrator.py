@@ -53,7 +53,7 @@ class GraphOrchestrator:
             FastPlayNode(api_key=api_key),
         ]
         
-        print(f"🎬 Graph Orchestrator initialized with {len(self.nodes)} nodes")
+        print(f"[GRAPH] Orchestrator initialized with {len(self.nodes)} nodes")
     
     def process_video(self, file_uri: str) -> tuple[List[NodeOutput], Dict]:
         """
@@ -66,18 +66,18 @@ class GraphOrchestrator:
             Tuple of (list of NodeOutput objects, metadata dict)
         """
         print("\n" + "="*60)
-        print("🎬 Starting Graph-Based Commentary Generation")
+        print("[GRAPH] Starting Graph-Based Commentary Generation")
         print("="*60)
         
         # Step 1: Detect pace/intensity
-        print("\n📊 Step 1: Analyzing video pace...")
+        print("\n[STEP 1] Analyzing video pace...")
         segments = self.pace_detector.analyze_pace(file_uri)
         
         if not segments:
             raise ValueError("No segments detected from video")
         
         # Step 2: Route segments and generate commentary
-        print(f"\n🎯 Step 2: Routing {len(segments)} segments to nodes...")
+        print(f"\n[STEP 2] Routing {len(segments)} segments to nodes...")
         outputs = []
         node_usage = {}
         
@@ -97,9 +97,9 @@ class GraphOrchestrator:
             try:
                 output = self._generate_commentary(segment, selected_node, file_uri)
                 outputs.append(output)
-                print(f"   ✅ Commentary generated ({len(output.commentary)} chars)")
+                print(f"   [OK] Commentary generated ({len(output.commentary)} chars)")
             except Exception as e:
-                print(f"   ⚠️  Failed: {str(e)}")
+                print(f"   [WARN] Failed: {str(e)}")
                 # Create fallback output
                 outputs.append(NodeOutput(
                     start_time=segment.start_time,
@@ -119,7 +119,7 @@ class GraphOrchestrator:
         }
         
         print("\n" + "="*60)
-        print("✅ Graph Processing Complete")
+        print("[SUCCESS] Graph Processing Complete")
         print(f"   Segments: {len(outputs)}")
         print(f"   Node usage: {node_usage}")
         print(f"   Avg intensity: {metadata['avg_intensity']:.1f}/10")
