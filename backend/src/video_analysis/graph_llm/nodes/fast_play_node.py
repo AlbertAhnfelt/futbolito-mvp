@@ -27,12 +27,12 @@ class FastPlayNode(BaseNode):
     def get_prompt(self, node_input: NodeInput) -> str:
         """
         Generate exciting prompt for fast play moments.
-        
+
         Returns prompt that encourages energetic, urgent commentary.
         """
         duration_seconds = self._estimate_duration(node_input.segment_start, node_input.segment_end)
         max_words = int(duration_seconds * 2.5)  # Conservative word rate
-        
+
         # Adjust excitement level based on intensity
         if node_input.intensity >= 9:
             intensity_desc = "EXTREME - Goal, shot, or critical moment"
@@ -43,10 +43,15 @@ class FastPlayNode(BaseNode):
         else:
             intensity_desc = "MEDIUM-HIGH - Quick transition or pressing"
             tone_guide = "Energetic but controlled, describe the action"
-        
+
+        # Build context section
+        context_section = ""
+        if node_input.context:
+            context_section = f"\n{node_input.context}\n"
+
         prompt = f"""
 Analyze this specific segment of a football match from {node_input.segment_start} to {node_input.segment_end}.
-
+{context_section}
 CONTEXT:
 - Pace: FAST/INTENSE (intensity: {node_input.intensity}/10 - {intensity_desc})
 - Event type: {node_input.event_type}

@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 from pathlib import Path
 from video_analysis.controller import list_videos, analyze_video
+from video_analysis.context_manager import get_context_manager, MatchContext
 
 router = APIRouter()
 
@@ -54,6 +55,43 @@ async def get_generated_video(filename: str):
             filename=filename
         )
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/match-context")
+async def save_match_context(context: MatchContext):
+    """Save match context (team names, player info) for commentary generation."""
+    try:
+        context_manager = get_context_manager()
+        context_manager.save_context(context)
+        return JSONResponse(content={"message": "Match context saved successfully"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/match-context")
+async def get_match_context():
+    """Get the current match context."""
+    try:
+        context_manager = get_context_manager()
+        context = context_manager.load_context()
+
+        if context is None:
+            return JSONResponse(content=None)
+
+        return JSONResponse(content=context.model_dump())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/match-context")
+async def clear_match_context():
+    """Clear/reset the match context."""
+    try:
+        context_manager = get_context_manager()
+        context_manager.clear_context()
+        return JSONResponse(content={"message": "Match context cleared successfully"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

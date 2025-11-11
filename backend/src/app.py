@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from video_analysis.route import router as video_router
+from football_api.route import router as football_router
 
 app = FastAPI(
     title="Futbolito MVP API",
@@ -21,6 +22,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(video_router, prefix="/api")
+app.include_router(football_router)
 
 
 @app.get("/")

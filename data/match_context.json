@@ -1,0 +1,19 @@
+{
+  "teams": {
+    "home": {
+      "name": "Sweden",
+      "players": [
+        {
+          "jersey": "10",
+          "name": "Albert Ahnfelt",
+          "position": "Forward",
+          "notes": "First football game of his life"
+        }
+      ]
+    },
+    "away": {
+      "name": "England",
+      "players": []
+    }
+  }
+}

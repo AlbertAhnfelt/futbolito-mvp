@@ -27,15 +27,20 @@ class SlowPlayNode(BaseNode):
     def get_prompt(self, node_input: NodeInput) -> str:
         """
         Generate analytical prompt for slow play moments.
-        
+
         Returns prompt that encourages tactical analysis and detailed observation.
         """
         duration_seconds = self._estimate_duration(node_input.segment_start, node_input.segment_end)
         max_words = int(duration_seconds * 2.5)  # Conservative word rate
-        
+
+        # Build context section
+        context_section = ""
+        if node_input.context:
+            context_section = f"\n{node_input.context}\n"
+
         prompt = f"""
 Analyze this specific segment of a football match from {node_input.segment_start} to {node_input.segment_end}.
-
+{context_section}
 CONTEXT:
 - Pace: SLOW/MEASURED (intensity: {node_input.intensity}/10)
 - Event type: {node_input.event_type}

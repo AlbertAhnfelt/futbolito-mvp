@@ -17,6 +17,7 @@ class NodeInput(BaseModel):
     event_type: str
     description: str
     file_uri: str  # Gemini file URI
+    context: Optional[str] = ""  # Match context (team/player info)
 
 
 class NodeOutput(BaseModel):

@@ -5,7 +5,7 @@ Routes video segments to appropriate nodes based on game pace and intensity.
 """
 
 import json
-from typing import List, Dict
+from typing import List, Dict, Optional
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
@@ -14,6 +14,7 @@ from .pace_detector import PaceDetector, VideoSegment
 from .nodes.base_node import BaseNode, NodeInput, NodeOutput
 from .nodes.slow_play_node import SlowPlayNode
 from .nodes.fast_play_node import FastPlayNode
+from ..context_manager import get_context_manager, MatchContext
 
 
 class CommentaryResponse(BaseModel):
@@ -58,17 +59,27 @@ class GraphOrchestrator:
     def process_video(self, file_uri: str) -> tuple[List[NodeOutput], Dict]:
         """
         Process entire video through the graph system.
-        
+
         Args:
             file_uri: Gemini file URI for the uploaded video
-        
+
         Returns:
             Tuple of (list of NodeOutput objects, metadata dict)
         """
         print("\n" + "="*60)
         print("[GRAPH] Starting Graph-Based Commentary Generation")
         print("="*60)
-        
+
+        # Load match context if available
+        context_manager = get_context_manager()
+        match_context = context_manager.load_context()
+        context_text = context_manager.format_for_prompt(match_context)
+
+        if match_context:
+            print(f"[GRAPH] Using match context: {match_context.teams['home'].name} vs {match_context.teams['away'].name}")
+        else:
+            print("[GRAPH] No match context available - using default commentary")
+
         # Step 1: Detect pace/intensity
         print("\n[STEP 1] Analyzing video pace...")
         segments = self.pace_detector.analyze_pace(file_uri)
@@ -95,7 +106,7 @@ class GraphOrchestrator:
             
             # Generate commentary using selected node
             try:
-                output = self._generate_commentary(segment, selected_node, file_uri)
+                output = self._generate_commentary(segment, selected_node, file_uri, context_text)
                 outputs.append(output)
                 print(f"   [OK] Commentary generated ({len(output.commentary)} chars)")
             except Exception as e:
@@ -148,16 +159,18 @@ class GraphOrchestrator:
         self,
         segment: VideoSegment,
         node: BaseNode,
-        file_uri: str
+        file_uri: str,
+        context_text: str = ""
     ) -> NodeOutput:
         """
         Generate commentary for a segment using specified node.
-        
+
         Args:
             segment: Video segment to analyze
             node: Node to use for generation
             file_uri: Gemini file URI
-        
+            context_text: Formatted match context for prompt injection
+
         Returns:
             NodeOutput with generated commentary
         """
@@ -168,9 +181,10 @@ class GraphOrchestrator:
             intensity=segment.intensity,
             event_type=segment.event_type,
             description=segment.description,
-            file_uri=file_uri
+            file_uri=file_uri,
+            context=context_text
         )
-        
+
         # Get node-specific prompt
         prompt = node.get_prompt(node_input)
         

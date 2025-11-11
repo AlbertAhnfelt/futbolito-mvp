@@ -14,6 +14,7 @@ import { PlayCircleOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { videoApi } from './services/api';
 import type { Highlight } from './types';
+import { MatchContextForm } from './components/MatchContextForm';
 import './App.css';
 
 const { Header, Content, Footer } = Layout;
@@ -127,6 +128,8 @@ function App() {
 
       <Content style={{ padding: '24px 48px', background: '#f0f9f4' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <MatchContextForm />
+
           <Card
             style={{ marginBottom: 24, borderRadius: 8 }}
             bordered={false}

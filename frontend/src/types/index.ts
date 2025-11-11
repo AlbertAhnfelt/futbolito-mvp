@@ -19,3 +19,23 @@ export interface ApiError {
   error: string;
 }
 
+// Match Context types for RAG/Knowledge Base
+export interface Player {
+  jersey: string;
+  name: string;
+  position?: string;
+  notes?: string;
+}
+
+export interface Team {
+  name: string;
+  players: Player[];
+}
+
+export interface MatchContext {
+  teams: {
+    home: Team;
+    away: Team;
+  };
+}
+
