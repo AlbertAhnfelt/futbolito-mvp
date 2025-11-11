@@ -87,6 +87,29 @@ class Highlight(BaseModel):
 # Initialize TTS generator (will be created per request in analyze_video)
 
 
+def has_audio_stream(video_path: Path, ffmpeg_exe: str) -> bool:
+    """
+    Check if video has an audio stream.
+    
+    Args:
+        video_path: Path to video file
+        ffmpeg_exe: Path to ffmpeg executable
+    
+    Returns:
+        True if video has audio stream, False otherwise
+    """
+    try:
+        cmd = [ffmpeg_exe, '-i', str(video_path)]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        # FFmpeg outputs stream info to stderr
+        # Look for "Audio:" which indicates an audio stream
+        return 'Audio:' in result.stderr
+    except Exception as e:
+        print(f"Warning: Could not detect audio stream: {e}")
+        # Assume video has audio if detection fails (safer default)
+        return True
+
+
 def generate_commentary_video(video_path: Path, highlights: list) -> str:
     """
     Generate a video with commentary audio overlaid at specific timestamps.
@@ -145,6 +168,10 @@ def generate_commentary_video(video_path: Path, highlights: list) -> str:
             if not audio_files:
                 raise ValueError("No valid audio files found in highlights")
 
+            # Check if video has audio stream
+            has_audio = has_audio_stream(video_path, ffmpeg_exe)
+            print(f"Video has audio: {has_audio}")
+
             # Build ffmpeg command using bundled executable
             # Strategy: delay each audio and mix all together, allowing overlaps
             print("Building ffmpeg command...")
@@ -158,9 +185,12 @@ def generate_commentary_video(video_path: Path, highlights: list) -> str:
             # Delay each audio input and then mix all together
             filter_parts = []
 
-            # Reduce original video audio to 20% volume
-            filter_parts.append(f"[0:a]volume=0.2[orig]")
+            # Add original audio to mix only if video has audio
+            if has_audio:
+                # Reduce original video audio to 20% volume
+                filter_parts.append(f"[0:a]volume=0.2[orig]")
 
+            # Delay each commentary audio
             for i, audio_info in enumerate(audio_files):
                 delay_ms = audio_info['delay_ms']
                 # Audio input index starts at 1 (0 is video)
@@ -169,14 +199,32 @@ def generate_commentary_video(video_path: Path, highlights: list) -> str:
                 # Add delay filter (adelay uses milliseconds and needs to be specified per channel)
                 filter_parts.append(f"[{audio_input_idx}:a]adelay={delay_ms}|{delay_ms}[{label}]")
 
-            # Mix all delayed audio tracks together with original video audio (at 20% volume)
+            # Mix all audio tracks together
             # Collect all audio labels
             audio_labels = [f"[a{i}]" for i in range(len(audio_files))]
-            all_audio = '[orig]' + ''.join(audio_labels)
-            num_inputs = len(audio_files) + 1  # +1 for original video audio
+            
+            if has_audio:
+                # Mix original audio (at 20%) with commentary
+                all_audio = '[orig]' + ''.join(audio_labels)
+                num_inputs = len(audio_files) + 1  # +1 for original video audio
+                volume_multiplier = num_inputs
+            else:
+                # Just mix commentary tracks (no original audio)
+                all_audio = ''.join(audio_labels)
+                num_inputs = len(audio_files)
+                # Less aggressive volume boost when there's no competing audio
+                volume_multiplier = max(1, num_inputs - 2)
+
+            # Debug logging
+            print(f"Audio mix configuration:")
+            print(f"  - Total inputs: {num_inputs}")
+            print(f"  - Audio tracks: {len(audio_files)}")
+            print(f"  - Delays: {[a['delay_ms'] for a in audio_files]}")
+            print(f"  - Duration strategy: longest (ensures all delayed audio plays)")
 
             # Mix all audio with dropout_transition=0 to allow immediate overlaps
-            filter_parts.append(f"{all_audio}amix=inputs={num_inputs}:duration=first:dropout_transition=0,volume={num_inputs}[aout]")
+            # IMPORTANT: Use duration=longest to accommodate all delayed audio tracks
+            filter_parts.append(f"{all_audio}amix=inputs={num_inputs}:duration=longest:dropout_transition=0,volume={volume_multiplier}[aout]")
 
             filter_complex = ';'.join(filter_parts)
 
