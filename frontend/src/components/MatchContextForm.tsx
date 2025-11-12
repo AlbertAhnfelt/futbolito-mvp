@@ -19,15 +19,9 @@ import {
   SaveOutlined,
   ClearOutlined,
   TeamOutlined,
-  SearchOutlined,
-  TrophyOutlined,
 } from '@ant-design/icons';
 import type { Player, MatchContext } from '../types';
-import type { TeamDetails, GameDetails, RosterPlayer } from '../types/football';
 import { matchContextApi } from '../services/api';
-import { TeamSearchModal } from './TeamSearchModal';
-import { GameSearchModal } from './GameSearchModal';
-import { RosterPreview } from './RosterPreview';
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
@@ -45,15 +39,6 @@ export const MatchContextForm: React.FC<MatchContextFormProps> = ({
   const [homePlayers, setHomePlayers] = useState<Player[]>([]);
   const [awayPlayers, setAwayPlayers] = useState<Player[]>([]);
 
-  // Modal states
-  const [homeTeamModalOpen, setHomeTeamModalOpen] = useState(false);
-  const [awayTeamModalOpen, setAwayTeamModalOpen] = useState(false);
-  const [gameModalOpen, setGameModalOpen] = useState(false);
-
-  // Roster preview states
-  const [homeRoster, setHomeRoster] = useState<RosterPlayer[] | null>(null);
-  const [awayRoster, setAwayRoster] = useState<RosterPlayer[] | null>(null);
-
   useEffect(() => {
     loadContext();
   }, []);
@@ -64,7 +49,9 @@ export const MatchContextForm: React.FC<MatchContextFormProps> = ({
       if (context && context.teams.home.name) {
         form.setFieldsValue({
           homeTeamName: context.teams.home.name,
+          homeShirtColor: context.teams.home.shirt_color || '',
           awayTeamName: context.teams.away.name,
+          awayShirtColor: context.teams.away.shirt_color || '',
         });
         setHomePlayers(context.teams.home.players || []);
         setAwayPlayers(context.teams.away.players || []);
@@ -79,8 +66,6 @@ export const MatchContextForm: React.FC<MatchContextFormProps> = ({
     const newPlayer: Player = {
       jersey: '',
       name: '',
-      position: '',
-      notes: '',
     };
 
     if (team === 'home') {
@@ -124,10 +109,12 @@ export const MatchContextForm: React.FC<MatchContextFormProps> = ({
         teams: {
           home: {
             name: values.homeTeamName,
+            shirt_color: values.homeShirtColor || undefined,
             players: homePlayers.filter((p) => p.jersey && p.name),
           },
           away: {
             name: values.awayTeamName,
+            shirt_color: values.awayShirtColor || undefined,
             players: awayPlayers.filter((p) => p.jersey && p.name),
           },
         },
@@ -152,8 +139,6 @@ export const MatchContextForm: React.FC<MatchContextFormProps> = ({
       form.resetFields();
       setHomePlayers([]);
       setAwayPlayers([]);
-      setHomeRoster(null);
-      setAwayRoster(null);
       setHasContext(false);
       message.success('Match context cleared!');
       onContextSaved?.();
@@ -163,56 +148,6 @@ export const MatchContextForm: React.FC<MatchContextFormProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const convertRosterToPlayers = (roster: RosterPlayer[]): Player[] => {
-    return roster.map((player) => ({
-      jersey: player.jersey_number || '',
-      name: player.name,
-      position: player.position || '',
-      notes: player.nationality ? `${player.nationality}${player.age ? `, Age: ${player.age}` : ''}` : '',
-    }));
-  };
-
-  const handleSelectHomeTeam = (team: TeamDetails) => {
-    form.setFieldsValue({ homeTeamName: team.name });
-    if (team.roster && team.roster.length > 0) {
-      const players = convertRosterToPlayers(team.roster);
-      setHomePlayers(players);
-      setHomeRoster(team.roster);
-      message.success(`Loaded ${team.roster.length} players for ${team.name}`);
-    }
-  };
-
-  const handleSelectAwayTeam = (team: TeamDetails) => {
-    form.setFieldsValue({ awayTeamName: team.name });
-    if (team.roster && team.roster.length > 0) {
-      const players = convertRosterToPlayers(team.roster);
-      setAwayPlayers(players);
-      setAwayRoster(team.roster);
-      message.success(`Loaded ${team.roster.length} players for ${team.name}`);
-    }
-  };
-
-  const handleSelectGame = (game: GameDetails) => {
-    form.setFieldsValue({
-      homeTeamName: game.home_team.name,
-      awayTeamName: game.away_team.name,
-    });
-
-    if (game.home_lineup && game.home_lineup.length > 0) {
-      const homePlayers = convertRosterToPlayers(game.home_lineup);
-      setHomePlayers(homePlayers);
-      setHomeRoster(game.home_lineup);
-    }
-
-    if (game.away_lineup && game.away_lineup.length > 0) {
-      const awayPlayers = convertRosterToPlayers(game.away_lineup);
-      setAwayPlayers(awayPlayers);
-      setAwayRoster(game.away_lineup);
-    }
-
-    message.success(`Loaded game data for ${game.home_team.name} vs ${game.away_team.name}`);
   };
 
   const renderPlayerInputs = (
@@ -237,7 +172,7 @@ export const MatchContextForm: React.FC<MatchContextFormProps> = ({
           }
         >
           <Row gutter={[8, 8]}>
-            <Col span={4}>
+            <Col span={6}>
               <Input
                 placeholder="Jersey #"
                 value={player.jersey}
@@ -247,30 +182,12 @@ export const MatchContextForm: React.FC<MatchContextFormProps> = ({
                 maxLength={3}
               />
             </Col>
-            <Col span={8}>
+            <Col span={18}>
               <Input
                 placeholder="Player Name *"
                 value={player.name}
                 onChange={(e) =>
                   updatePlayer(team, index, 'name', e.target.value)
-                }
-              />
-            </Col>
-            <Col span={6}>
-              <Input
-                placeholder="Position"
-                value={player.position}
-                onChange={(e) =>
-                  updatePlayer(team, index, 'position', e.target.value)
-                }
-              />
-            </Col>
-            <Col span={6}>
-              <Input
-                placeholder="Notes"
-                value={player.notes}
-                onChange={(e) =>
-                  updatePlayer(team, index, 'notes', e.target.value)
                 }
               />
             </Col>
@@ -315,50 +232,33 @@ export const MatchContextForm: React.FC<MatchContextFormProps> = ({
               useful for amateur matches where AI might not recognize players.
             </Text>
 
-            <Space style={{ width: '100%', justifyContent: 'center' }}>
-              <Button
-                type="primary"
-                icon={<TrophyOutlined />}
-                onClick={() => setGameModalOpen(true)}
-                size="large"
-                style={{
-                  background: '#1890ff',
-                  borderColor: '#1890ff',
-                }}
-              >
-                Search Game (Quick Fill)
-              </Button>
-            </Space>
-
-            <Divider>OR</Divider>
-
             <Form form={form} layout="vertical">
               <Row gutter={24}>
                 <Col span={12}>
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <Form.Item
-                      label={<Text strong>Home Team Name</Text>}
-                      name="homeTeamName"
-                      rules={[
-                        { required: true, message: 'Please enter home team name' },
-                      ]}
-                      style={{ marginBottom: 8 }}
-                    >
-                      <Input
-                        placeholder="e.g., Barcelona"
-                        size="large"
-                        style={{ borderColor: '#1e4d2b' }}
-                      />
-                    </Form.Item>
-                    <Button
-                      icon={<SearchOutlined />}
-                      onClick={() => setHomeTeamModalOpen(true)}
-                      block
-                      style={{ marginBottom: 16 }}
-                    >
-                      Search Home Team
-                    </Button>
-                  </Space>
+                  <Form.Item
+                    label={<Text strong>Home Team Name</Text>}
+                    name="homeTeamName"
+                    rules={[
+                      { required: true, message: 'Please enter home team name' },
+                    ]}
+                  >
+                    <Input
+                      placeholder="e.g., Barcelona"
+                      size="large"
+                      style={{ borderColor: '#1e4d2b' }}
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<Text strong>Home Team Shirt Color</Text>}
+                    name="homeShirtColor"
+                  >
+                    <Input
+                      placeholder="e.g., Red and Blue, White"
+                      size="large"
+                      style={{ borderColor: '#1e4d2b' }}
+                    />
+                  </Form.Item>
 
                   <Divider orientation="left">
                     <Text strong style={{ color: '#1e4d2b' }}>
@@ -369,30 +269,30 @@ export const MatchContextForm: React.FC<MatchContextFormProps> = ({
                 </Col>
 
                 <Col span={12}>
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <Form.Item
-                      label={<Text strong>Away Team Name</Text>}
-                      name="awayTeamName"
-                      rules={[
-                        { required: true, message: 'Please enter away team name' },
-                      ]}
-                      style={{ marginBottom: 8 }}
-                    >
-                      <Input
-                        placeholder="e.g., Real Madrid"
-                        size="large"
-                        style={{ borderColor: '#6fbf8b' }}
-                      />
-                    </Form.Item>
-                    <Button
-                      icon={<SearchOutlined />}
-                      onClick={() => setAwayTeamModalOpen(true)}
-                      block
-                      style={{ marginBottom: 16 }}
-                    >
-                      Search Away Team
-                    </Button>
-                  </Space>
+                  <Form.Item
+                    label={<Text strong>Away Team Name</Text>}
+                    name="awayTeamName"
+                    rules={[
+                      { required: true, message: 'Please enter away team name' },
+                    ]}
+                  >
+                    <Input
+                      placeholder="e.g., Real Madrid"
+                      size="large"
+                      style={{ borderColor: '#6fbf8b' }}
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<Text strong>Away Team Shirt Color</Text>}
+                    name="awayShirtColor"
+                  >
+                    <Input
+                      placeholder="e.g., All White, Yellow and Green"
+                      size="large"
+                      style={{ borderColor: '#6fbf8b' }}
+                    />
+                  </Form.Item>
 
                   <Divider orientation="left">
                     <Text strong style={{ color: '#6fbf8b' }}>
@@ -433,42 +333,6 @@ export const MatchContextForm: React.FC<MatchContextFormProps> = ({
           </Space>
         </Panel>
       </Collapse>
-
-      {/* Search Modals */}
-      <TeamSearchModal
-        open={homeTeamModalOpen}
-        onClose={() => setHomeTeamModalOpen(false)}
-        onSelectTeam={handleSelectHomeTeam}
-        title="Search Home Team"
-      />
-
-      <TeamSearchModal
-        open={awayTeamModalOpen}
-        onClose={() => setAwayTeamModalOpen(false)}
-        onSelectTeam={handleSelectAwayTeam}
-        title="Search Away Team"
-      />
-
-      <GameSearchModal
-        open={gameModalOpen}
-        onClose={() => setGameModalOpen(false)}
-        onSelectGame={handleSelectGame}
-      />
-
-      {/* Roster Previews */}
-      {homeRoster && (
-        <RosterPreview
-          teamName={form.getFieldValue('homeTeamName')}
-          roster={homeRoster}
-        />
-      )}
-
-      {awayRoster && (
-        <RosterPreview
-          teamName={form.getFieldValue('awayTeamName')}
-          roster={awayRoster}
-        />
-      )}
     </Card>
   );
 };

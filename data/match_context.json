@@ -1,19 +1,28 @@
 {
   "teams": {
     "home": {
-      "name": "Sweden",
+      "name": "The Destroyers",
+      "shirt_color": "Yellow and Blue",
       "players": [
         {
           "jersey": "10",
-          "name": "Albert Ahnfelt",
+          "name": "Einstein",
           "position": "Forward",
           "notes": "First football game of his life"
         }
       ]
     },
     "away": {
-      "name": "England",
-      "players": []
+      "name": "The Warriors",
+      "shirt_color": "White",
+      "players": [
+        {
+          "jersey": "1",
+          "name": "Gandhi",
+          "position": null,
+          "notes": null
+        }
+      ]
     }
   }
 }

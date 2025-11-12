@@ -23,12 +23,11 @@ export interface ApiError {
 export interface Player {
   jersey: string;
   name: string;
-  position?: string;
-  notes?: string;
 }
 
 export interface Team {
   name: string;
+  shirt_color?: string;
   players: Player[];
 }
 

@@ -22,6 +22,7 @@ class Player(BaseModel):
 class Team(BaseModel):
     """Team information."""
     name: str
+    shirt_color: Optional[str] = None
     players: List[Player] = []
 
 
@@ -110,8 +111,8 @@ class ContextManager:
     def clear_context(self) -> None:
         """Clear match context (reset to empty state)."""
         empty_context = MatchContext(teams={
-            'home': Team(name='', players=[]),
-            'away': Team(name='', players=[])
+            'home': Team(name='', shirt_color=None, players=[]),
+            'away': Team(name='', shirt_color=None, players=[])
         })
         self.save_context(empty_context)
         self._cache = None
@@ -139,7 +140,10 @@ class ContextManager:
         # Format home team
         home = context.teams.get('home')
         if home and home.name:
-            lines.append(f"HOME TEAM: {home.name}")
+            team_header = f"HOME TEAM: {home.name}"
+            if home.shirt_color:
+                team_header += f" (wearing {home.shirt_color})"
+            lines.append(team_header)
             if home.players:
                 lines.append("Players:")
                 for player in home.players:
@@ -154,7 +158,10 @@ class ContextManager:
         # Format away team
         away = context.teams.get('away')
         if away and away.name:
-            lines.append(f"AWAY TEAM: {away.name}")
+            team_header = f"AWAY TEAM: {away.name}"
+            if away.shirt_color:
+                team_header += f" (wearing {away.shirt_color})"
+            lines.append(team_header)
             if away.players:
                 lines.append("Players:")
                 for player in away.players:
