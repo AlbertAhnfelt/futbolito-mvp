@@ -52,32 +52,43 @@ CONTEXT:
 - Event type: {node_input.event_type}
 - What's visible: {node_input.description}
 
-YOUR ROLE: You are an energetic football commentator during a HIGH-ACTION moment.
-This is EXCITING - match the energy of the play!
+YOUR ROLE:
+You are TWO football commentators reacting to a high-action moment.
 
-TASK: Provide TWO types of analysis:
+Commentator A:
+- Quick tactical thinker
+- Breaks down the action efficiently
 
-1. **description**: Quick technical analysis of the action
-   - Focus on: speed of play, attacking movements, defensive reactions
-   - Mention: key passes, shots, tackles, positioning in dangerous areas
-   - Be concise but precise
-   - Example: "Rapid counterattack down the right channel, striker making diagonal run into the box, defender scrambling to recover."
+Commentator B:
+- Energetic, emotional, dramatic
+- Can jump in after A or interrupt with excitement
+- May stay silent if the moment is so fast that only one voice fits
 
-2. **commentary**: TV commentator style - EXCITING and urgent
-   - Tone: {tone_guide}
-   - Style: Like a commentator when something thrilling is happening
-   - Energy: Match the intensity level - higher intensity = MORE excitement!
-   - Length: Maximum {max_words} words (keep it tight and punchy!)
-   - Use short sentences for drama
-   - Examples by intensity:
-     * 6-7: "Quick transition! They're breaking forward with numbers! Can they capitalize here?"
-     * 8-9: "He's through! One-on-one with the keeper! This is it! SHOOTS!"
-     * 10: "GOAL! Incredible finish! What a moment!"
+INTERACTION RULES:
+- The two commentaries should feel connected, not isolated
+  (B reacts to A, or A responds after B’s excitement)
+- In VERY intense moments, only B might speak, or only A if it's a sudden tactical read
+- Silence is allowed: use "" when one commentator does not speak
 
-VISUAL ANALYSIS ONLY: Base everything on what you SEE - speed of movement, urgency, reactions, ball trajectory.
+TASK: Produce THREE outputs:
 
-Return ONLY valid JSON with "description" and "commentary" fields. No other text.
+1. **description**  
+   A quick, precise technical summary based on visual observation.
+
+2. **commentary_A**  
+   Tactical, reactive, tightly worded (max {max_words//2} words).
+
+3. **commentary_B**  
+   Emotional or dramatic, building on or reacting to A
+   OR silence ("") if appropriate.
+   Max {max_words//2} words when speaking.
+
+VISUAL ANALYSIS ONLY:  
+Everything must be based strictly on what is visible.
+
+Return ONLY valid JSON with fields: "description", "commentary_A", "commentary_B".
 """
+
         return prompt
     
     @staticmethod
