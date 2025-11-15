@@ -22,6 +22,6 @@ DEBUG_COMMENTARY_ONLY = _debug_value.strip().lower() == "true"
 # Print debug mode status on module load
 if DEBUG_COMMENTARY_ONLY:
     print(f"\n{'='*60}")
-    print(f"🔧 DEBUG MODE ENABLED: Commentary-Only Mode Active")
+    print(f"[DEBUG] DEBUG MODE ENABLED: Commentary-Only Mode Active")
     print(f"{'='*60}\n")
 

@@ -1,28 +1,14 @@
 {
   "teams": {
     "home": {
-      "name": "The Destroyers",
-      "shirt_color": "Yellow and Blue",
-      "players": [
-        {
-          "jersey": "10",
-          "name": "Einstein",
-          "position": "Forward",
-          "notes": "First football game of his life"
-        }
-      ]
+      "name": "",
+      "shirt_color": null,
+      "players": []
     },
     "away": {
-      "name": "The Warriors",
-      "shirt_color": "White",
-      "players": [
-        {
-          "jersey": "1",
-          "name": "Gandhi",
-          "position": null,
-          "notes": null
-        }
-      ]
+      "name": "",
+      "shirt_color": null,
+      "players": []
     }
   }
 }
