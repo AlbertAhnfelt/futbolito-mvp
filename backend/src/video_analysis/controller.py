@@ -6,7 +6,7 @@ from typing import Optional
 from google import genai
 from google.genai import types
 
-from . import GEMINI_API_KEY, ELEVENLABS_API_KEY, DEBUG_COMMENTARY_ONLY
+from . import GEMINI_API_KEY, ELEVENLABS_API_KEY
 from .audio.tts_generator import TTSGenerator
 from .analysis.event_detector import EventDetector
 from .commentary.commentary_generator import CommentaryGenerator
@@ -125,58 +125,6 @@ async def analyze_video(filename: str):
         print(f"\n✓ Commentary generation completed!")
         print(f"  Total commentary segments: {len(commentaries)}")
         print(f"  Commentaries saved to: output/commentary.json")
-
-        # ============================================================
-        # DEBUG MODE: Skip TTS and video generation if enabled
-        # ============================================================
-        if DEBUG_COMMENTARY_ONLY:
-            print("\n" + "=" * 60)
-            print("🔧 DEBUG MODE: Commentary-Only Mode Enabled")
-            print("=" * 60)
-            print("Skipping TTS audio generation and video creation.")
-            print("Returning events and commentary only.")
-            print(f"\nGenerated {len(commentaries)} commentary segments:")
-            for i, c in enumerate(commentaries):
-                print(f"\n  [{i+1}] {c.start_time} - {c.end_time}")
-                print(f"      Commentary: {c.commentary}")
-            print("\n" + "=" * 60)
-            print("To disable debug mode: Remove DEBUG_COMMENTARY_ONLY from .env")
-            print("=" * 60 + "\n")
-
-            # Return events and commentaries without audio or video
-            # Create highlights for frontend (commentary segments only)
-            highlights = []
-            for commentary in commentaries:
-                # Find events within this commentary's time range for intensity calculation
-                start_secs = parse_time_to_seconds(commentary.start_time)
-                end_secs = parse_time_to_seconds(commentary.end_time)
-
-                # Get events in this time range
-                events_in_range = [
-                    e for e in events
-                    if start_secs <= parse_time_to_seconds(e.time) <= end_secs
-                ]
-
-                # Calculate average intensity from events
-                if events_in_range:
-                    avg_intensity = sum(e.intensity for e in events_in_range) / len(events_in_range)
-                else:
-                    avg_intensity = 5
-
-                highlights.append({
-                    'start_time': commentary.start_time,
-                    'end_time': commentary.end_time,
-                    'commentary': commentary.commentary,
-                    'intensity': int(avg_intensity)
-                })
-
-            return {
-                'events': [e.model_dump() for e in events],
-                'commentaries': [c.model_dump() for c in commentaries],
-                'highlights': highlights,  # For frontend compatibility
-                'generated_video': None,
-                'debug_mode': True
-            }
 
         # ============================================================
         # STEP 3: TTS AUDIO GENERATION
