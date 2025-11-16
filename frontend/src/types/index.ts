@@ -49,3 +49,44 @@ export interface EventsData {
   events: Event[];
 }
 
+// Streaming API types
+export interface StreamStatusEvent {
+  type: 'status';
+  message: string;
+  progress: number;
+}
+
+export interface StreamChunkReadyEvent {
+  type: 'chunk_ready';
+  index: number;
+  url: string;
+  start_time: string;
+  end_time: string;
+  progress: number;
+}
+
+export interface StreamCompleteEvent {
+  type: 'complete';
+  chunks: number;
+  final_video: string;
+  progress: number;
+}
+
+export interface StreamErrorEvent {
+  type: 'error';
+  message: string;
+}
+
+export type StreamEvent =
+  | StreamStatusEvent
+  | StreamChunkReadyEvent
+  | StreamCompleteEvent
+  | StreamErrorEvent;
+
+export interface VideoChunk {
+  index: number;
+  url: string;
+  startTime: string;
+  endTime: string;
+}
+
