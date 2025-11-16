@@ -13,7 +13,7 @@ import {
 import { PlayCircleOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { videoApi } from './services/api';
-import type { Highlight } from './types';
+import type { Highlight, Event } from './types';
 import { MatchContextForm } from './components/MatchContextForm';
 import './App.css';
 
@@ -24,6 +24,7 @@ function App() {
   const [videos, setVideos] = useState<string[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<string>('');
   const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [generatedVideo, setGeneratedVideo] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -57,12 +58,22 @@ function App() {
     setAnalyzing(true);
     setError('');
     setHighlights([]);
+    setEvents([]);
     setGeneratedVideo('');
 
     try {
       const results = await videoApi.analyzeVideo(selectedVideo);
       setHighlights(results.highlights);
       setGeneratedVideo(results.generated_video);
+
+      // Fetch events
+      try {
+        const eventsData = await videoApi.getEvents();
+        setEvents(eventsData.events || []);
+      } catch (eventsErr) {
+        console.warn('Could not load events:', eventsErr);
+        // Don't fail the entire analysis if events can't be loaded
+      }
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.detail || err.message || 'Analysis failed';
@@ -73,23 +84,34 @@ function App() {
     }
   };
 
-  const columns: ColumnsType<Highlight> = [
+  // Columns for events table (left)
+  const eventsColumns: ColumnsType<Event> = [
+    {
+      title: 'Event Time',
+      dataIndex: 'time',
+      key: 'time',
+      width: 100,
+    },
+    {
+      title: 'Event Description',
+      dataIndex: 'description',
+      key: 'description',
+    },
+  ];
+
+  // Columns for highlights table (right)
+  const highlightsColumns: ColumnsType<Highlight> = [
     {
       title: 'Start Time',
       dataIndex: 'start_time',
       key: 'start_time',
-      width: 120,
+      width: 100,
     },
     {
       title: 'End Time',
       dataIndex: 'end_time',
       key: 'end_time',
-      width: 120,
-    },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
+      width: 100,
     },
     {
       title: 'Commentary',
@@ -226,21 +248,42 @@ function App() {
               <Card
                 title={
                   <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
-                    Football Highlights
+                    Football Highlights & Events
                   </Title>
                 }
                 style={{ borderRadius: 8, marginBottom: 24 }}
               >
-                <Table
-                  columns={columns}
-                  dataSource={highlights}
-                  rowKey={(record, index) => `${record.start_time}-${index}`}
-                  pagination={{
-                    pageSize: 10,
-                    showSizeChanger: true,
-                    showTotal: (total) => `Total ${total} highlights`,
-                  }}
-                />
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  {/* Left Table - Events */}
+                  <div style={{ flex: '0 0 45%' }}>
+                    <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>
+                      Detected Events
+                    </Title>
+                    <Table
+                      columns={eventsColumns}
+                      dataSource={events}
+                      rowKey={(record, index) => `event-${index}`}
+                      pagination={false}
+                      scroll={{ y: 400 }}
+                      size="small"
+                    />
+                  </div>
+
+                  {/* Right Table - Highlights */}
+                  <div style={{ flex: '0 0 55%' }}>
+                    <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>
+                      Generated Commentary
+                    </Title>
+                    <Table
+                      columns={highlightsColumns}
+                      dataSource={highlights}
+                      rowKey={(record, index) => `highlight-${index}`}
+                      pagination={false}
+                      scroll={{ y: 400 }}
+                      size="small"
+                    />
+                  </div>
+                </div>
               </Card>
 
               {generatedVideo && (

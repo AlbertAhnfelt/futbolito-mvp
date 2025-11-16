@@ -38,3 +38,14 @@ export interface MatchContext {
   };
 }
 
+export interface Event {
+  time: string;
+  description: string;
+  replay: boolean;
+  intensity: number;
+}
+
+export interface EventsData {
+  events: Event[];
+}
+

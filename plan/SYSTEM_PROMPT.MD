@@ -25,11 +25,6 @@ Each event object must exactly follow this structure:
 {
   "time": "HH:MM:SS",
   "description": "Detailed technical description of what happens visually.",
-  "players": [
-    "numberX",
-    "numberY",
-    "numberZ"
-  ],
   "replay": false,
   "intensity": 5
 }
@@ -39,9 +34,7 @@ Notes:
 
 "time" → timecode in the video when the event starts (HH:MM:SS).
 
-"players" → only include visible player identifiers (like jersey numbers).
-
-"replay" → true if it’s a replay segment, else false.
+"replay" → true if it's a replay segment, else false.
 
 "intensity" → integer from 1 (calm) to 10 (very intense).
 
@@ -60,21 +53,18 @@ EXAMPLE OUTPUT:
     {
       "time": "00:00:03",
       "description": "Player #10 passes diagonally to #7 near the left wing.",
-      "players": ["10", "7"],
       "replay": false,
       "intensity": 4
     },
     {
       "time": "00:00:08",
       "description": "Player #7 dribbles past a defender and takes a shot on goal.",
-      "players": ["7"],
       "replay": false,
       "intensity": 8
     },
     {
       "time": "00:00:11",
       "description": "Replay of the previous shot shown in slow motion.",
-      "players": ["7"],
       "replay": true,
       "intensity": 3
     }

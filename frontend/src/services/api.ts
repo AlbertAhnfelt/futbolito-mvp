@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AnalyzeResponse, AnalyzeRequest, MatchContext } from '../types';
+import type { AnalyzeResponse, AnalyzeRequest, MatchContext, EventsData } from '../types';
 
 // Configure API base URL - update this for production
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
@@ -26,6 +26,14 @@ export const videoApi = {
   analyzeVideo: async (filename: string): Promise<AnalyzeResponse> => {
     const payload: AnalyzeRequest = { filename };
     const response = await apiClient.post<AnalyzeResponse>('/analyze', payload);
+    return response.data;
+  },
+
+  /**
+   * Get detected events from events.json
+   */
+  getEvents: async (): Promise<EventsData> => {
+    const response = await apiClient.get<EventsData>('/events');
     return response.data;
   },
 };

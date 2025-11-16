@@ -16,7 +16,6 @@ The Gemini should analyse these 60sec-snippets with metadata-cutting, which is m
 
 Then, for each segment, the events of the match should be added into a large .json file called "events.json". This .json file contains a chronical list of all things that has happened in the match, and has this information:
 - time in HH:MM:SS
-- vector of players involved, in jersey number
 - a precise description of what exactly everything that happened with football language
 - a true/false (1/0) parameter in integer, if it's a replay or not. 1 is replay, 0 is not.
 - a integer rating 1 to 10 in how intense the event is

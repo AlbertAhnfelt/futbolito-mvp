@@ -71,11 +71,6 @@ Each event object must exactly follow this structure:
 {
   "time": "HH:MM:SS",
   "description": "EXTREMELY DETAILED technical description with specific player names, exact action types, field positions, and ball trajectory.",
-  "players": [
-    "Zlatan Ibrahimović #10",
-    "#7",
-    "Joe Hart"
-  ],
   "replay": false,
   "intensity": 5
 }
@@ -84,8 +79,6 @@ Each event object must exactly follow this structure:
 Notes:
 
 "time" → timecode in the video when the event starts (HH:MM:SS).
-
-"players" → Include ALL visible player identifiers with names if shown on screen (jersey numbers, names from overlays, graphics, etc).
 
 "replay" → boolean: true if it's a replay segment, false if live action.
 

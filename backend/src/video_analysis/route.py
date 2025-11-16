@@ -95,3 +95,21 @@ async def clear_match_context():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/events")
+async def get_events():
+    """Get the events.json file with detected events."""
+    try:
+        # Get the path to events.json in the output directory
+        events_file = Path(__file__).parent.parent.parent.parent / 'output' / 'events.json'
+
+        if not events_file.exists():
+            return JSONResponse(content={"events": []})
+
+        return FileResponse(
+            path=str(events_file),
+            media_type="application/json"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

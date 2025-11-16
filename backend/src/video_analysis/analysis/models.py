@@ -12,13 +12,11 @@ class Event(BaseModel):
 
     Attributes:
         time: Timestamp in HH:MM:SS format
-        players: List of jersey numbers involved in the event
         description: Detailed technical description of the event
         replay: Whether this is a replay (true) or live action (false)
         intensity: Intensity rating from 1 (calm) to 10 (very intense)
     """
     time: str = Field(..., description="Event timestamp in HH:MM:SS format")
-    players: List[str] = Field(default_factory=list, description="Jersey numbers of involved players")
     description: str = Field(..., description="Detailed technical description of the event")
     replay: bool = Field(..., description="true if replay, false if live action")
     intensity: int = Field(..., ge=1, le=10, description="Intensity rating from 1 to 10")
