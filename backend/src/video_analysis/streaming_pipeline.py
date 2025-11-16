@@ -14,6 +14,7 @@ Pipeline stages:
 
 import asyncio
 import json
+import subprocess
 import time
 import traceback
 from pathlib import Path
@@ -582,6 +583,12 @@ class StreamingPipeline:
                 # Chunk ends at this commentary's end_time
                 chunk_end = parse_time_to_seconds(commentary.end_time)
 
+                # Validate chunk duration (skip if too small or zero)
+                chunk_duration = chunk_end - chunk_start
+                if chunk_duration < 0.1:
+                    print(f"[STREAMING] Skipping chunk {chunk_index}: duration too small ({chunk_duration:.2f}s)")
+                    continue
+
                 print(f"[STREAMING] Creating chunk {chunk_index}: {seconds_to_time(chunk_start)} - {seconds_to_time(chunk_end)}")
 
                 try:
@@ -622,7 +629,8 @@ class StreamingPipeline:
                     continue
 
             # Stage 4: Create final chunk from last commentary end to video end
-            if chunk_start <= self.video_duration:
+            final_chunk_duration = self.video_duration - chunk_start
+            if chunk_start <= self.video_duration and final_chunk_duration >= 0.1:
                 print(f"[STREAMING] Creating final chunk {chunk_index}: {seconds_to_time(chunk_start)} - {seconds_to_time(self.video_duration)}")
 
                 try:
