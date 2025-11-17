@@ -295,6 +295,9 @@ class StreamingPipeline:
             intervals = calculate_video_intervals(self.video_duration, 30)
             total_intervals = len(intervals)
 
+            # Accumulate all events for saving to events.json
+            all_events = []
+
             for i, (start, end) in enumerate(intervals, 1):
                 print(f"[STREAMING] Analyzing interval {i}/{total_intervals}: {seconds_to_time(start)} - {seconds_to_time(end)}")
 
@@ -305,6 +308,12 @@ class StreamingPipeline:
                     interval_end=int(end)
                 )
 
+                # Accumulate events
+                all_events.extend(events)
+
+                # Save accumulated events to events.json after each interval
+                self.event_detector._save_events(all_events)
+
                 # Push to queue immediately (don't wait for other intervals)
                 await event_queue.put({
                     'interval': (int(start), int(end)),
@@ -312,7 +321,7 @@ class StreamingPipeline:
                     'interval_index': i - 1
                 })
 
-                print(f"[STREAMING] Pushed {len(events)} events from interval {i} to queue")
+                print(f"[STREAMING] Pushed {len(events)} events from interval {i} to queue (total: {len(all_events)})")
 
                 # Emit SSE event for progress tracking
                 await sse_event_queue.put({
@@ -325,7 +334,7 @@ class StreamingPipeline:
 
             # Signal completion
             await event_queue.put(None)
-            print(f"[STREAMING] Event detection completed")
+            print(f"[STREAMING] Event detection completed - saved {len(all_events)} total events to events.json")
 
         except Exception as e:
             print(f"[STREAMING] Event detection error: {e}")
@@ -350,6 +359,9 @@ class StreamingPipeline:
             print(f"[STREAMING] Starting commentary generation...")
 
             interval_index = 0
+
+            # Accumulate all commentaries for saving to commentary.json
+            all_commentaries = []
 
             while True:
                 event_batch = await event_queue.get()
@@ -380,12 +392,18 @@ class StreamingPipeline:
 
                     # Push each commentary to queue immediately
                     for commentary in commentaries:
+                        # Accumulate commentaries
+                        all_commentaries.append(commentary)
+
+                        # Save accumulated commentaries to commentary.json
+                        self.commentary_generator._save_commentaries(all_commentaries)
+
                         await commentary_queue.put({
                             'commentary': commentary,
                             'interval_index': interval_index
                         })
 
-                        print(f"[STREAMING] Pushed commentary to queue: {commentary.start_time} - {commentary.end_time}")
+                        print(f"[STREAMING] Pushed commentary to queue: {commentary.start_time} - {commentary.end_time} (total: {len(all_commentaries)})")
 
                         # Emit SSE event for progress tracking
                         await sse_event_queue.put({
@@ -404,7 +422,7 @@ class StreamingPipeline:
             # Signal completion
             await commentary_queue.put(None)
             await sse_event_queue.put(None)  # Signal SSE stream completion
-            print(f"[STREAMING] Commentary generation completed")
+            print(f"[STREAMING] Commentary generation completed - saved {len(all_commentaries)} total commentaries to commentary.json")
 
         except Exception as e:
             print(f"[STREAMING] Commentary generation error: {e}")
