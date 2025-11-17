@@ -6,7 +6,6 @@ import {
   Button,
   Table,
   Alert,
-  Spin,
   Card,
   Space,
   Progress,
@@ -30,6 +29,9 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string>('');
+
+  // NEW: language state
+  const [language, setLanguage] = useState<string>('en');
 
   // Streaming state
   const [chunks, setChunks] = useState<VideoChunk[]>([]);
@@ -99,10 +101,9 @@ function App() {
             setProgress(data.progress);
             break;
 
-          case 'chunk_ready':
+          case 'chunk_ready': {
             console.log('Chunk ready:', data.index, data.url);
 
-            // Add chunk to list
             const newChunk: VideoChunk = {
               index: data.index,
               url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}${data.url}`,
@@ -113,11 +114,9 @@ function App() {
             console.log('Full chunk URL:', newChunk.url);
 
             setChunks((prev) => [...prev, newChunk]);
-
-            // Video source will be set by useEffect once the video element is ready
-
             setProgress(data.progress);
             break;
+          }
 
           case 'complete':
             console.log('Processing complete:', data.chunks, 'chunks');
@@ -126,13 +125,29 @@ function App() {
             setStatusMessage('Complete!');
             setGeneratedVideo(data.final_video);
 
-            // Fetch events and commentary
-            videoApi.getEvents()
+            // Fetch events (from events.json)
+            videoApi
+              .getEvents()
               .then((eventsData) => {
                 setEvents(eventsData.events || []);
               })
               .catch((err) => {
                 console.warn('Could not load events:', err);
+              });
+
+            // NEW: Run batch analyze for multi-language commentary/highlights
+            videoApi
+              .analyzeVideo(selectedVideo, language)
+              .then((analyzeRes) => {
+                if (analyzeRes.highlights) {
+                  setHighlights(analyzeRes.highlights);
+                }
+                if (analyzeRes.generated_video) {
+                  setGeneratedVideo(analyzeRes.generated_video);
+                }
+              })
+              .catch((err) => {
+                console.warn('Could not run batch analyze for multi-language output:', err);
               });
 
             eventSource.close();
@@ -167,22 +182,19 @@ function App() {
     const nextIndex = currentChunkIndex + 1;
 
     if (nextIndex < chunks.length) {
-      // Play next chunk
       const nextChunk = chunks[nextIndex];
       if (videoRef.current) {
         console.log('Playing next chunk:', nextChunk.url);
         videoRef.current.src = nextChunk.url;
-        videoRef.current.load(); // Explicitly load the video
+        videoRef.current.load();
         videoRef.current.play().catch((err) => {
           console.warn('Error playing next chunk:', err);
         });
       }
       setCurrentChunkIndex(nextIndex);
     } else if (isComplete) {
-      // All chunks played and processing complete
       console.log('Playback complete');
     } else {
-      // Wait for next chunk to arrive
       console.log('Waiting for next chunk...');
     }
   };
@@ -198,6 +210,7 @@ function App() {
         console.warn('Autoplay prevented:', err);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chunks, videoRef.current]);
 
   // Cleanup on unmount
@@ -289,6 +302,20 @@ function App() {
               </div>
 
               <Space size="middle" style={{ width: '100%' }}>
+                {/* Language Select */}
+                <Select
+                  style={{ width: 160 }}
+                  value={language}
+                  onChange={setLanguage}
+                  disabled={analyzing}
+                  options={[
+                    { label: 'English', value: 'en' },
+                    { label: 'Français', value: 'fr' },
+                    { label: 'Español', value: 'es' },
+                  ]}
+                  size="large"
+                />
+
                 <Select
                   placeholder={
                     loading ? 'Loading videos...' : 'Select a video...'
@@ -387,7 +414,6 @@ function App() {
             />
           )}
 
-          {/* Video Player - Show during streaming or after completion */}
           {(chunks.length > 0 || generatedVideo) && (
             <Card
               title={
@@ -408,7 +434,7 @@ function App() {
                       error: videoRef.current?.error,
                       networkState: videoRef.current?.networkState,
                       readyState: videoRef.current?.readyState,
-                      currentSrc: videoRef.current?.currentSrc
+                      currentSrc: videoRef.current?.currentSrc,
                     });
                   }}
                   onLoadStart={() => console.log('Video load started')}
@@ -430,7 +456,6 @@ function App() {
             </Card>
           )}
 
-          {/* Events and Commentary Tables - Show after completion */}
           {highlights.length > 0 && !analyzing && (
             <Card
               title={
@@ -441,7 +466,6 @@ function App() {
               style={{ borderRadius: 8, marginBottom: 24 }}
             >
               <div style={{ display: 'flex', gap: '16px' }}>
-                {/* Left Table - Events */}
                 <div style={{ flex: '0 0 45%' }}>
                   <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>
                     Detected Events
@@ -456,7 +480,6 @@ function App() {
                   />
                 </div>
 
-                {/* Right Table - Highlights */}
                 <div style={{ flex: '0 0 55%' }}>
                   <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>
                     Generated Commentary
