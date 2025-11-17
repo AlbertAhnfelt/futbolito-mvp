@@ -12,6 +12,7 @@ router = APIRouter()
 
 class AnalyzeRequest(BaseModel):
     filename: str
+    language: str = "en"  # ✅ changed: add language field with default "en"
 
 
 @router.get("/videos/list")
@@ -31,7 +32,8 @@ async def analyze_video_endpoint(request: AnalyzeRequest):
         if not request.filename:
             raise HTTPException(status_code=400, detail="No filename provided")
 
-        highlights = await analyze_video(request.filename)
+        # ✅ changed: pass language through to the controller
+        highlights = await analyze_video(request.filename, request.language)
         return JSONResponse(content=highlights)
 
     except FileNotFoundError as e:
@@ -183,4 +185,3 @@ async def get_events():
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
