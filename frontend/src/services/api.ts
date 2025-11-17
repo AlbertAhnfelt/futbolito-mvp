@@ -23,8 +23,14 @@ export const videoApi = {
   /**
    * Analyze a video and get highlights with generated commentary video (BATCH MODE - deprecated)
    */
-  analyzeVideo: async (filename: string): Promise<AnalyzeResponse> => {
-    const payload: AnalyzeRequest = { filename };
+  analyzeVideo: async (
+    filename: string,
+    language: string,              // ✅ changed: add language parameter
+  ): Promise<AnalyzeResponse> => {
+    const payload: AnalyzeRequest = {
+      filename,
+      language,                   // ✅ changed: include language in request body
+    };
     const response = await apiClient.post<AnalyzeResponse>('/analyze', payload);
     return response.data;
   },
@@ -72,4 +78,3 @@ export const matchContextApi = {
 };
 
 export default apiClient;
-
