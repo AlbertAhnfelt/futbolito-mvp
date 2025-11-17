@@ -1,0 +1,14 @@
+{
+  "teams": {
+    "home": {
+      "name": "",
+      "shirt_color": null,
+      "players": []
+    },
+    "away": {
+      "name": "",
+      "shirt_color": null,
+      "players": []
+    }
+  }
+}

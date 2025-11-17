@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Layout,
   Typography,
@@ -9,11 +9,13 @@ import {
   Spin,
   Card,
   Space,
+  Progress,
 } from 'antd';
 import { PlayCircleOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { videoApi } from './services/api';
-import type { Highlight } from './types';
+import type { Highlight, Event, StreamEvent, VideoChunk } from './types';
+import { MatchContextForm } from './components/MatchContextForm';
 import './App.css';
 
 const { Header, Content, Footer } = Layout;
@@ -23,10 +25,22 @@ function App() {
   const [videos, setVideos] = useState<string[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<string>('');
   const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [generatedVideo, setGeneratedVideo] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string>('');
+
+  // Streaming state
+  const [chunks, setChunks] = useState<VideoChunk[]>([]);
+  const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [isComplete, setIsComplete] = useState(false);
+
+  // Refs
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   // Fetch videos on component mount
   useEffect(() => {
@@ -47,48 +61,182 @@ function App() {
     }
   };
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = () => {
     if (!selectedVideo) {
       setError('Please select a video');
       return;
     }
 
+    // Close any existing EventSource
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+
+    // Reset state
     setAnalyzing(true);
     setError('');
     setHighlights([]);
+    setEvents([]);
     setGeneratedVideo('');
+    setChunks([]);
+    setCurrentChunkIndex(0);
+    setProgress(0);
+    setStatusMessage('Starting analysis...');
+    setIsComplete(false);
 
-    try {
-      const results = await videoApi.analyzeVideo(selectedVideo);
-      setHighlights(results.highlights);
-      setGeneratedVideo(results.generated_video);
-    } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.detail || err.message || 'Analysis failed';
-      setError(`Error: ${errorMessage}`);
-      console.error('Error analyzing video:', err);
-    } finally {
+    // Create EventSource for streaming
+    const eventSource = videoApi.analyzeVideoStream(selectedVideo);
+    eventSourceRef.current = eventSource;
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data: StreamEvent = JSON.parse(event.data);
+
+        switch (data.type) {
+          case 'status':
+            console.log('Status:', data.message);
+            setStatusMessage(data.message);
+            setProgress(data.progress);
+            break;
+
+          case 'chunk_ready':
+            console.log('Chunk ready:', data.index, data.url);
+
+            // Add chunk to list
+            const newChunk: VideoChunk = {
+              index: data.index,
+              url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}${data.url}`,
+              startTime: data.start_time,
+              endTime: data.end_time,
+            };
+
+            console.log('Full chunk URL:', newChunk.url);
+
+            setChunks((prev) => [...prev, newChunk]);
+
+            // Video source will be set by useEffect once the video element is ready
+
+            setProgress(data.progress);
+            break;
+
+          case 'complete':
+            console.log('Processing complete:', data.chunks, 'chunks');
+            setIsComplete(true);
+            setProgress(100);
+            setStatusMessage('Complete!');
+            setGeneratedVideo(data.final_video);
+
+            // Fetch events and commentary
+            videoApi.getEvents()
+              .then((eventsData) => {
+                setEvents(eventsData.events || []);
+              })
+              .catch((err) => {
+                console.warn('Could not load events:', err);
+              });
+
+            eventSource.close();
+            setAnalyzing(false);
+            break;
+
+          case 'error':
+            console.error('Processing error:', data.message);
+            setError(`Error: ${data.message}`);
+            setStatusMessage(`Error: ${data.message}`);
+            eventSource.close();
+            setAnalyzing(false);
+            break;
+        }
+      } catch (err) {
+        console.error('Error parsing SSE data:', err);
+        setError('Error processing streaming response');
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('EventSource error:', error);
+      setError('Connection error during analysis');
+      setStatusMessage('Connection error');
+      eventSource.close();
       setAnalyzing(false);
+    };
+  };
+
+  // Handle video ended - play next chunk
+  const handleVideoEnded = () => {
+    const nextIndex = currentChunkIndex + 1;
+
+    if (nextIndex < chunks.length) {
+      // Play next chunk
+      const nextChunk = chunks[nextIndex];
+      if (videoRef.current) {
+        console.log('Playing next chunk:', nextChunk.url);
+        videoRef.current.src = nextChunk.url;
+        videoRef.current.load(); // Explicitly load the video
+        videoRef.current.play().catch((err) => {
+          console.warn('Error playing next chunk:', err);
+        });
+      }
+      setCurrentChunkIndex(nextIndex);
+    } else if (isComplete) {
+      // All chunks played and processing complete
+      console.log('Playback complete');
+    } else {
+      // Wait for next chunk to arrive
+      console.log('Waiting for next chunk...');
     }
   };
 
-  const columns: ColumnsType<Highlight> = [
+  // Set video source when first chunk is available and video element is ready
+  useEffect(() => {
+    if (chunks.length > 0 && videoRef.current && !videoRef.current.src) {
+      const firstChunk = chunks[0];
+      console.log('useEffect: Setting video source to first chunk:', firstChunk.url);
+      videoRef.current.src = firstChunk.url;
+      videoRef.current.load();
+      videoRef.current.play().catch((err) => {
+        console.warn('Autoplay prevented:', err);
+      });
+    }
+  }, [chunks, videoRef.current]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
+
+  // Columns for events table (left)
+  const eventsColumns: ColumnsType<Event> = [
+    {
+      title: 'Event Time',
+      dataIndex: 'time',
+      key: 'time',
+      width: 100,
+    },
+    {
+      title: 'Event Description',
+      dataIndex: 'description',
+      key: 'description',
+    },
+  ];
+
+  // Columns for highlights table (right)
+  const highlightsColumns: ColumnsType<Highlight> = [
     {
       title: 'Start Time',
       dataIndex: 'start_time',
       key: 'start_time',
-      width: 120,
+      width: 100,
     },
     {
       title: 'End Time',
       dataIndex: 'end_time',
       key: 'end_time',
-      width: 120,
-    },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
+      width: 100,
     },
     {
       title: 'Commentary',
@@ -127,6 +275,8 @@ function App() {
 
       <Content style={{ padding: '24px 48px', background: '#f0f9f4' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <MatchContextForm />
+
           <Card
             style={{ marginBottom: 24, borderRadius: 8 }}
             bordered={false}
@@ -195,11 +345,30 @@ function App() {
           )}
 
           {analyzing && (
-            <Card style={{ textAlign: 'center', marginBottom: 24 }}>
-              <Spin size="large" />
-              <div style={{ marginTop: 16, color: '#5aa876' }}>
-                <Text>Analyzing video with AI... This may take a minute.</Text>
-              </div>
+            <Card style={{ marginBottom: 24 }}>
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                <div>
+                  <Text strong style={{ color: '#1e4d2b' }}>
+                    {statusMessage || 'Analyzing video...'}
+                  </Text>
+                </div>
+                <Progress
+                  percent={progress}
+                  status={progress === 100 ? 'success' : 'active'}
+                  strokeColor={{
+                    '0%': '#6fbf8b',
+                    '100%': '#1e4d2b',
+                  }}
+                />
+                {chunks.length > 0 && (
+                  <div>
+                    <Text type="secondary">
+                      Playing chunk {currentChunkIndex + 1} of {chunks.length}
+                      {!isComplete && ' (more chunks loading...)'}
+                    </Text>
+                  </div>
+                )}
+              </Space>
             </Card>
           )}
 
@@ -218,49 +387,91 @@ function App() {
             />
           )}
 
-          {highlights.length > 0 && !analyzing && (
-            <>
-              <Card
-                title={
-                  <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
-                    Football Highlights
-                  </Title>
-                }
-                style={{ borderRadius: 8, marginBottom: 24 }}
-              >
-                <Table
-                  columns={columns}
-                  dataSource={highlights}
-                  rowKey={(record, index) => `${record.start_time}-${index}`}
-                  pagination={{
-                    pageSize: 10,
-                    showSizeChanger: true,
-                    showTotal: (total) => `Total ${total} highlights`,
+          {/* Video Player - Show during streaming or after completion */}
+          {(chunks.length > 0 || generatedVideo) && (
+            <Card
+              title={
+                <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
+                  {isComplete ? 'Generated Commentary Video' : 'Live Streaming Commentary'}
+                </Title>
+              }
+              style={{ borderRadius: 8, marginBottom: 24 }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <video
+                  ref={videoRef}
+                  controls
+                  onEnded={handleVideoEnded}
+                  onError={(e) => {
+                    console.error('Video error:', e);
+                    console.error('Video error details:', {
+                      error: videoRef.current?.error,
+                      networkState: videoRef.current?.networkState,
+                      readyState: videoRef.current?.readyState,
+                      currentSrc: videoRef.current?.currentSrc
+                    });
                   }}
-                />
-              </Card>
-
-              {generatedVideo && (
-                <Card
-                  title={
-                    <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
-                      Generated Commentary Video
-                    </Title>
-                  }
-                  style={{ borderRadius: 8 }}
+                  onLoadStart={() => console.log('Video load started')}
+                  onLoadedData={() => console.log('Video data loaded')}
+                  onCanPlay={() => console.log('Video can play')}
+                  style={{ width: '100%', maxWidth: '800px', borderRadius: 8 }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <video
-                      controls
-                      style={{ width: '100%', maxWidth: '800px', borderRadius: 8 }}
-                      src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/videos/generated/${generatedVideo}`}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  </div>
-                </Card>
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+              {chunks.length > 0 && (
+                <div style={{ marginTop: 16, textAlign: 'center' }}>
+                  <Text type="secondary">
+                    Chunk {currentChunkIndex + 1} of {chunks.length}
+                    {!isComplete && ' - Processing continues in background...'}
+                  </Text>
+                </div>
               )}
-            </>
+            </Card>
+          )}
+
+          {/* Events and Commentary Tables - Show after completion */}
+          {highlights.length > 0 && !analyzing && (
+            <Card
+              title={
+                <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
+                  Football Highlights & Events
+                </Title>
+              }
+              style={{ borderRadius: 8, marginBottom: 24 }}
+            >
+              <div style={{ display: 'flex', gap: '16px' }}>
+                {/* Left Table - Events */}
+                <div style={{ flex: '0 0 45%' }}>
+                  <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>
+                    Detected Events
+                  </Title>
+                  <Table
+                    columns={eventsColumns}
+                    dataSource={events}
+                    rowKey={(record, index) => `event-${index}`}
+                    pagination={false}
+                    scroll={{ y: 400 }}
+                    size="small"
+                  />
+                </div>
+
+                {/* Right Table - Highlights */}
+                <div style={{ flex: '0 0 55%' }}>
+                  <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>
+                    Generated Commentary
+                  </Title>
+                  <Table
+                    columns={highlightsColumns}
+                    dataSource={highlights}
+                    rowKey={(record, index) => `highlight-${index}`}
+                    pagination={false}
+                    scroll={{ y: 400 }}
+                    size="small"
+                  />
+                </div>
+              </div>
+            </Card>
           )}
         </div>
       </Content>

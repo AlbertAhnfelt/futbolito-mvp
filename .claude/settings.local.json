@@ -9,7 +9,8 @@
       "WebSearch",
       "Bash(dir:*)",
       "WebFetch(domain:ai.google.dev)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "WebFetch(domain:fbrapi.com)"
     ],
     "deny": [],
     "ask": []
