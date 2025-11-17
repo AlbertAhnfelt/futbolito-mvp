@@ -14,6 +14,67 @@ from .video.video_processor import VideoProcessor
 from .video.time_utils import parse_time_to_seconds
 
 
+# -------------------------------------------------------------------
+# Multi-language helpers (EN / FR / ES)
+# -------------------------------------------------------------------
+
+SUPPORTED_LANGUAGES = {"en", "fr", "es"}
+
+LANGUAGE_NAME = {
+    "en": "English",
+    "fr": "French",
+    "es": "Spanish",
+}
+
+
+def _normalize_language(language: Optional[str]) -> str:
+    """Normalize requested language code; fallback to 'en' if unsupported."""
+    if not language:
+        return "en"
+    language = language.lower()
+    if language not in SUPPORTED_LANGUAGES:
+        return "en"
+    return language
+
+
+def _translate_commentaries(client, commentaries, target_language: str):
+    """
+    Translate commentary.text into the target language using Gemini.
+    Mutates the commentary objects in-place.
+    """
+    if target_language == "en":
+        # No translation needed
+        return
+
+    lang_name = LANGUAGE_NAME.get(target_language, "English")
+    print(f"\nStep 4 (optional): Translating commentary to {lang_name}...")
+
+    for idx, commentary in enumerate(commentaries):
+        original_text = commentary.commentary
+
+        print(f"  [{idx + 1}/{len(commentaries)}] Translating segment...")
+
+        prompt = f"""
+You are a professional translator specializing in football (soccer) commentary.
+
+Translate the following commentary into {lang_name}.
+- Preserve the meaning, intensity, and football terminology.
+- Keep player names, numbers, and times unchanged.
+- Return ONLY the translated text, with no explanations.
+
+Original:
+\"\"\"{original_text}\"\"\"
+"""
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[types.Part.from_text(prompt)],
+        )
+
+        translated_text = response.text.strip()
+        commentary.commentary = translated_text
+
+
 def list_videos():
     """List all MP4 files in the videos directory."""
     videos_dir = Path(__file__).parent.parent.parent.parent / 'videos'
@@ -24,18 +85,23 @@ def list_videos():
     return video_files
 
 
-async def analyze_video(filename: str):
+async def analyze_video(filename: str, language: str = "en"):
     """
     Analyze a video file using the new two-process pipeline:
     1. Event detection (30-second intervals)
     2. Commentary generation (from detected events)
-    3. TTS audio generation
-    4. Video generation with commentary overlay (exact timing)
+    3. (Optional) Translation of commentary (en/fr/es)
+    4. TTS audio generation
+    5. Video generation with commentary overlay (exact timing)
     """
     try:
         print(f"\n{'='*60}")
         print(f"🎬 VIDEO ANALYSIS PIPELINE - NEW SYSTEM")
         print(f"{'='*60}\n")
+
+        # Normalize target language
+        language = _normalize_language(language)
+        print(f"Target commentary language: {LANGUAGE_NAME[language]} ({language})")
 
         # Initialize Gemini client
         if not GEMINI_API_KEY:
@@ -125,6 +191,11 @@ async def analyze_video(filename: str):
         print(f"\n✓ Commentary generation completed!")
         print(f"  Total commentary segments: {len(commentaries)}")
         print(f"  Commentaries saved to: output/commentary.json")
+
+        # ============================================================
+        # OPTIONAL: TRANSLATE COMMENTARY (EN → FR / ES)
+        # ============================================================
+        _translate_commentaries(client, commentaries, language)
 
         # ============================================================
         # STEP 3: TTS AUDIO GENERATION
@@ -240,4 +311,3 @@ async def analyze_video(filename: str):
         print(traceback.format_exc())
         print("=" * 60)
         raise
-
