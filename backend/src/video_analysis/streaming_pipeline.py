@@ -684,8 +684,8 @@ class StreamingPipeline:
         """
         Create a single video chunk spanning chunk_start to chunk_end.
 
-        If commentary is provided, it will be overlaid at the appropriate time
-        within the chunk (relative to chunk start, with 1-second delay).
+        If commentary is provided, it will be overlaid at the exact time
+        specified by the commentary start_time (relative to chunk start).
 
         This is a SYNCHRONOUS method that will be run in a thread.
 
@@ -720,15 +720,15 @@ class StreamingPipeline:
 
                 # Calculate delay relative to chunk start
                 # Commentary start_time is absolute (relative to original video)
-                # We need delay relative to this chunk's start + 1 second
+                # We need delay relative to this chunk's start (exact timing)
                 commentary_start = parse_time_to_seconds(commentary.start_time)
-                delay_from_chunk_start = (commentary_start - chunk_start) + 1.0  # +1s delay
+                delay_from_chunk_start = commentary_start - chunk_start
                 delay_ms = int(delay_from_chunk_start * 1000)
 
                 # Ensure delay is not negative
                 if delay_ms < 0:
-                    print(f"[WARNING] Negative delay calculated: {delay_ms}ms, setting to 1000ms")
-                    delay_ms = 1000
+                    print(f"[WARNING] Negative delay calculated: {delay_ms}ms, setting to 0ms")
+                    delay_ms = 0
 
                 # FFmpeg command to create chunk with audio overlay
                 cmd = [

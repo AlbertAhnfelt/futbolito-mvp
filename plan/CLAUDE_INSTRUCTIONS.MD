@@ -52,6 +52,6 @@ commentary "example 2.2"
 
 (this one had a too short entry, a too long entry, and didn't have enough space between them)
 
-These commentary snippets are lastly to be processed in a similar way to the current implementation via elevenlabs, and then re-added to the video, also in the way that it works now. There is one difference however. The audio should be added with a 1-second delay. So if "start_time" is 00:00:13, the audio should be added at 00:00:14.
+These commentary snippets are lastly to be processed in a similar way to the current implementation via elevenlabs, and then re-added to the video, also in the way that it works now. The audio should be added at the exact time specified by start_time. So if "start_time" is 00:00:13, the audio should be added at 00:00:13.
 
 Go ahead and plan and build.

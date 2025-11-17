@@ -170,7 +170,7 @@ const eventSource = new EventSource('/api/analyze-stream/video.mp4');
 - Consumes audio from `audio_queue`
 - Creates video chunk using FFmpeg:
   - Extracts time segment from original video
-  - Overlays commentary audio with 1-second delay
+  - Overlays commentary audio at exact timing
   - Reduces original audio to 20% volume
   - Outputs progressive MP4 with `+faststart` flag
 - Saves to `videos/streaming/{session_id}/chunk_{N}.mp4`
@@ -548,7 +548,7 @@ RUN apt-get update && apt-get install -y ffmpeg
 1. ✅ Time to first chunk: < 30 seconds (achieved ~18-26s)
 2. ✅ Total generation time: < 50% of old system (45s vs 77s = 42% reduction)
 3. ✅ Chunk concatenation: Seamless (using identical encoding params)
-4. ✅ Audio quality: No glitches (1-second delay + proper mixing)
+4. ✅ Audio quality: No glitches (exact timing + proper mixing)
 5. ✅ Error recovery: Pipeline continues despite individual failures
 6. ✅ Progressive playback: User can watch while generation continues
 

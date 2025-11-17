@@ -122,9 +122,9 @@ response = client.models.generate_content(
 
 **Features:**
 - Extracted FFmpeg video generation logic
-- **Implements 1-second audio delay** (start_time + 1.0s) ✅ VERIFIED
+- **Uses exact timing from commentary** (no delay added) ✅ VERIFIED
   ```python
-  delay_seconds = start_seconds + 1.0  # Add 1-second delay
+  delay_seconds = start_seconds  # Exact timing
   delay_ms = int(delay_seconds * 1000)
   ```
 - Maintains existing audio mixing (20% original + commentary overlay)
@@ -186,7 +186,7 @@ analyze_video(filename)
    - Store as base64-encoded MP3
   ↓
 5. Video Generation (VideoProcessor)
-   - Overlay commentary audio with 1-second delay
+   - Overlay commentary audio at exact timing
    - Mix with original audio (20% volume)
    - Output to videos/generated-videos/
 ```
@@ -212,7 +212,7 @@ analyze_video(filename)
   - [x] Duration: 5-30 seconds
   - [x] Gaps: 1-4 seconds
   - [x] Word limit: 2.5 words/second MAX
-- [x] **Audio delay**: 1 second from start_time ✅ VERIFIED
+- [x] **Audio timing**: Exact start_time (no delay) ✅ VERIFIED
 - [x] **Output files**: `output/events.json` and `output/commentary.json`
 
 ### API Compliance
@@ -272,7 +272,7 @@ backend/src/video_analysis/
 | **Replay Field** | N/A | **Boolean** (true/false) ✅ |
 | **Commentary** | Generated per segment immediately | Generated from all detected events |
 | **Commentary Output** | In-memory only | `output/commentary.json` (persistent) |
-| **Audio Delay** | None | **1-second delay** from start_time ✅ |
+| **Audio Timing** | None | **Exact start_time** (no delay) ✅ |
 | **Context Usage** | Only in commentary nodes | Both event detection & commentary |
 | **API Usage** | Basic | Gemini video metadata + JSON schema ✅ |
 | **Validation** | None | Pydantic models + timing constraints ✅ |
@@ -331,7 +331,7 @@ DEBUG_COMMENTARY_ONLY=true  # Optional: Skip TTS/video for testing
 - Gemini API usage matches official documentation ✅
 - Match context manager integration working for both processes ✅
 - Debug mode available for testing without TTS/video generation ✅
-- 1-second audio delay properly implemented in video processor ✅
+- Exact audio timing implemented in video processor ✅
 - Timing validation ensures commentary fits within segments ✅
 - **Replay field fixed to boolean** (was integer) ✅
 - **Intervals updated to 30 seconds** (was 60 seconds) ✅

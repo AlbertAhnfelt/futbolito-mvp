@@ -173,7 +173,7 @@ class VideoProcessor:
         """
         Generate a video with commentary audio overlaid at specific timestamps.
 
-        IMPORTANT: Audio is added with a 1-second delay from start_time.
+        Audio is added at the exact start_time specified in commentaries.
 
         Args:
             video_path: Path to the original video file
@@ -224,9 +224,9 @@ class VideoProcessor:
                     audio_file.write_bytes(audio_bytes)
 
                     # Calculate delay in milliseconds
-                    # IMPORTANT: Add 1 second delay as per requirements
+                    # Use exact start_time from commentary
                     start_seconds = parse_time_to_seconds(commentary['start_time'])
-                    delay_seconds = start_seconds + 1.0  # Add 1-second delay
+                    delay_seconds = start_seconds
                     delay_ms = int(delay_seconds * 1000)
 
                     audio_files.append({
@@ -236,7 +236,7 @@ class VideoProcessor:
                         'start_time': commentary['start_time']
                     })
 
-                    print(f"[VIDEO PROCESSOR]   Audio {i+1}: {commentary['start_time']} → {delay_ms}ms delay (with +1s)")
+                    print(f"[VIDEO PROCESSOR]   Audio {i+1}: {commentary['start_time']} → {delay_ms}ms delay")
 
                 if not audio_files:
                     print(f"\n[WARN] No valid audio files found!")

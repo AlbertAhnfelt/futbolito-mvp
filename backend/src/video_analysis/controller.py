@@ -30,7 +30,7 @@ async def analyze_video(filename: str):
     1. Event detection (30-second intervals)
     2. Commentary generation (from detected events)
     3. TTS audio generation
-    4. Video generation with commentary overlay (1-second delay)
+    4. Video generation with commentary overlay (exact timing)
     """
     try:
         print(f"\n{'='*60}")
