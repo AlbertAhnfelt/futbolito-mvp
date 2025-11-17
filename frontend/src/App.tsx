@@ -110,11 +110,15 @@ function App() {
               endTime: data.end_time,
             };
 
+            console.log('Full chunk URL:', newChunk.url);
+
             setChunks((prev) => [...prev, newChunk]);
 
             // If this is the first chunk, start playing
             if (data.index === 0 && videoRef.current) {
+              console.log('Setting first chunk source:', newChunk.url);
               videoRef.current.src = newChunk.url;
+              videoRef.current.load(); // Explicitly load the video
               videoRef.current.play().catch((err) => {
                 console.warn('Autoplay prevented:', err);
               });
@@ -174,7 +178,9 @@ function App() {
       // Play next chunk
       const nextChunk = chunks[nextIndex];
       if (videoRef.current) {
+        console.log('Playing next chunk:', nextChunk.url);
         videoRef.current.src = nextChunk.url;
+        videoRef.current.load(); // Explicitly load the video
         videoRef.current.play().catch((err) => {
           console.warn('Error playing next chunk:', err);
         });
@@ -188,6 +194,17 @@ function App() {
       console.log('Waiting for next chunk...');
     }
   };
+
+  // Set video source when first chunk is available
+  useEffect(() => {
+    if (chunks.length > 0 && currentChunkIndex === 0 && videoRef.current) {
+      const firstChunk = chunks[0];
+      console.log('useEffect: Setting video source to first chunk:', firstChunk.url);
+      videoRef.current.src = firstChunk.url;
+      videoRef.current.load();
+      // Don't autoplay here, let the chunk_ready handler do it
+    }
+  }, [chunks.length]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -376,79 +393,91 @@ function App() {
             />
           )}
 
-          {highlights.length > 0 && !analyzing && (
-            <>
-              <Card
-                title={
-                  <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
-                    Football Highlights & Events
-                  </Title>
-                }
-                style={{ borderRadius: 8, marginBottom: 24 }}
-              >
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  {/* Left Table - Events */}
-                  <div style={{ flex: '0 0 45%' }}>
-                    <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>
-                      Detected Events
-                    </Title>
-                    <Table
-                      columns={eventsColumns}
-                      dataSource={events}
-                      rowKey={(record, index) => `event-${index}`}
-                      pagination={false}
-                      scroll={{ y: 400 }}
-                      size="small"
-                    />
-                  </div>
-
-                  {/* Right Table - Highlights */}
-                  <div style={{ flex: '0 0 55%' }}>
-                    <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>
-                      Generated Commentary
-                    </Title>
-                    <Table
-                      columns={highlightsColumns}
-                      dataSource={highlights}
-                      rowKey={(record, index) => `highlight-${index}`}
-                      pagination={false}
-                      scroll={{ y: 400 }}
-                      size="small"
-                    />
-                  </div>
-                </div>
-              </Card>
-
-              {(generatedVideo || chunks.length > 0) && (
-                <Card
-                  title={
-                    <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
-                      {isComplete ? 'Generated Commentary Video' : 'Live Streaming Commentary'}
-                    </Title>
-                  }
-                  style={{ borderRadius: 8 }}
+          {/* Video Player - Show during streaming or after completion */}
+          {(chunks.length > 0 || generatedVideo) && (
+            <Card
+              title={
+                <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
+                  {isComplete ? 'Generated Commentary Video' : 'Live Streaming Commentary'}
+                </Title>
+              }
+              style={{ borderRadius: 8, marginBottom: 24 }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <video
+                  ref={videoRef}
+                  controls
+                  onEnded={handleVideoEnded}
+                  onError={(e) => {
+                    console.error('Video error:', e);
+                    console.error('Video error details:', {
+                      error: videoRef.current?.error,
+                      networkState: videoRef.current?.networkState,
+                      readyState: videoRef.current?.readyState,
+                      currentSrc: videoRef.current?.currentSrc
+                    });
+                  }}
+                  onLoadStart={() => console.log('Video load started')}
+                  onLoadedData={() => console.log('Video data loaded')}
+                  onCanPlay={() => console.log('Video can play')}
+                  style={{ width: '100%', maxWidth: '800px', borderRadius: 8 }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <video
-                      ref={videoRef}
-                      controls
-                      onEnded={handleVideoEnded}
-                      style={{ width: '100%', maxWidth: '800px', borderRadius: 8 }}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  </div>
-                  {chunks.length > 0 && (
-                    <div style={{ marginTop: 16 }}>
-                      <Text type="secondary">
-                        Chunk {currentChunkIndex + 1} of {chunks.length}
-                        {!isComplete && ' - Processing continues in background...'}
-                      </Text>
-                    </div>
-                  )}
-                </Card>
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+              {chunks.length > 0 && (
+                <div style={{ marginTop: 16, textAlign: 'center' }}>
+                  <Text type="secondary">
+                    Chunk {currentChunkIndex + 1} of {chunks.length}
+                    {!isComplete && ' - Processing continues in background...'}
+                  </Text>
+                </div>
               )}
-            </>
+            </Card>
+          )}
+
+          {/* Events and Commentary Tables - Show after completion */}
+          {highlights.length > 0 && !analyzing && (
+            <Card
+              title={
+                <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
+                  Football Highlights & Events
+                </Title>
+              }
+              style={{ borderRadius: 8, marginBottom: 24 }}
+            >
+              <div style={{ display: 'flex', gap: '16px' }}>
+                {/* Left Table - Events */}
+                <div style={{ flex: '0 0 45%' }}>
+                  <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>
+                    Detected Events
+                  </Title>
+                  <Table
+                    columns={eventsColumns}
+                    dataSource={events}
+                    rowKey={(record, index) => `event-${index}`}
+                    pagination={false}
+                    scroll={{ y: 400 }}
+                    size="small"
+                  />
+                </div>
+
+                {/* Right Table - Highlights */}
+                <div style={{ flex: '0 0 55%' }}>
+                  <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>
+                    Generated Commentary
+                  </Title>
+                  <Table
+                    columns={highlightsColumns}
+                    dataSource={highlights}
+                    rowKey={(record, index) => `highlight-${index}`}
+                    pagination={false}
+                    scroll={{ y: 400 }}
+                    size="small"
+                  />
+                </div>
+              </div>
+            </Card>
           )}
         </div>
       </Content>
