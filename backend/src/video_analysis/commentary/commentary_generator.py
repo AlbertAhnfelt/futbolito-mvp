@@ -206,7 +206,7 @@ class CommentaryGenerator:
             List of validated commentary dictionaries with proper gaps
         """
         MIN_GAP = 1  # seconds
-        MAX_GAP = 4  # seconds
+        MAX_GAP = 2  # seconds
 
         validated = []
 
