@@ -114,15 +114,7 @@ function App() {
 
             setChunks((prev) => [...prev, newChunk]);
 
-            // If this is the first chunk, start playing
-            if (data.index === 0 && videoRef.current) {
-              console.log('Setting first chunk source:', newChunk.url);
-              videoRef.current.src = newChunk.url;
-              videoRef.current.load(); // Explicitly load the video
-              videoRef.current.play().catch((err) => {
-                console.warn('Autoplay prevented:', err);
-              });
-            }
+            // Video source will be set by useEffect once the video element is ready
 
             setProgress(data.progress);
             break;
@@ -195,16 +187,18 @@ function App() {
     }
   };
 
-  // Set video source when first chunk is available
+  // Set video source when first chunk is available and video element is ready
   useEffect(() => {
-    if (chunks.length > 0 && currentChunkIndex === 0 && videoRef.current) {
+    if (chunks.length > 0 && videoRef.current && !videoRef.current.src) {
       const firstChunk = chunks[0];
       console.log('useEffect: Setting video source to first chunk:', firstChunk.url);
       videoRef.current.src = firstChunk.url;
       videoRef.current.load();
-      // Don't autoplay here, let the chunk_ready handler do it
+      videoRef.current.play().catch((err) => {
+        console.warn('Autoplay prevented:', err);
+      });
     }
-  }, [chunks.length]);
+  }, [chunks, videoRef.current]);
 
   // Cleanup on unmount
   useEffect(() => {
