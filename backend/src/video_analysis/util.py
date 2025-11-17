@@ -21,3 +21,4 @@ def parse_timestamp(timestamp: str) -> float:
     else:
         return float(parts[0])
 
+

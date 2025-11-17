@@ -57,3 +57,4 @@ async def get_generated_video(filename: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+

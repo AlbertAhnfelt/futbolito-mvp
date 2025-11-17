@@ -90,3 +90,4 @@ class BaseNode(ABC):
         """String representation of the node."""
         return f"{self.node_name}(style='{self.get_commentary_style()}')"
 
+

@@ -99,3 +99,4 @@ Return ONLY valid JSON with "description" and "commentary" fields. No other text
         except:
             return 10.0  # Default fallback
 
+
