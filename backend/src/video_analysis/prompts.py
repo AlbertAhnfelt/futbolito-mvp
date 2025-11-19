@@ -19,6 +19,8 @@ Your goal is to return a single JSON object named events.json that contains all 
 
 RULES:
 
+You will recieve a 30-second video clip of a football match.
+
 Visual-only analysis:
 Use only the visual information in the video (player movements, ball, referee signals, on-screen text, replays, etc).
 Ignore all audio or commentary.
@@ -76,11 +78,11 @@ Each event object must exactly follow this structure:
 
 Notes:
 
-"time" → timecode in the video when the event starts (HH:MM:SS).
+"time" → timecode in the video when the event starts (HH:MM:SS). It should be between 00:00:00 and 00:00:30.
 
 "replay" → boolean: true if it's a replay segment, false if live action.
 
-"intensity" → integer from 1 (calm) to 10 (very intense).
+"intensity" → integer from 1 (nothing interesting happening) to 10 (very intense).
 
 "description" → MUST be highly detailed with specific technique names, player identifications, positions, and trajectories. Minimum 15 words for significant events.
 
