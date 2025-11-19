@@ -27,6 +27,7 @@ from .analysis.event_detector import EventDetector
 from .commentary.commentary_generator import CommentaryGenerator
 from .audio.tts_generator import TTSGenerator
 from .video.video_processor import VideoProcessor
+from .video.video_splitter import VideoSplitter, VideoClip
 from .video.time_utils import calculate_video_intervals, seconds_to_time, parse_time_to_seconds
 
 
@@ -70,6 +71,8 @@ class StreamingPipeline:
         self.video_path = None
         self.file_uri = None
         self.video_duration = 0.0
+        self.clips = []
+        self.clip_file_uris = []
 
     async def process_video_stream(
         self,
@@ -112,49 +115,85 @@ class StreamingPipeline:
             video_path_with_audio = self.video_processor.ensure_video_has_audio(self.video_path)
             self.video_duration = self.video_processor.get_video_duration(video_path_with_audio)
 
-            # Step 2: Upload to Gemini
+            # Step 2: Split video into clips
             yield {
                 'type': 'status',
-                'message': 'Uploading video to analysis service...',
+                'message': 'Splitting video into segments...',
                 'progress': 10
             }
 
-            client = genai.Client(api_key=self.api_key)
-            uploaded_file = client.files.upload(file=str(video_path_with_audio))
-            file_name = uploaded_file.name
+            splitter = VideoSplitter(ffmpeg_exe=self.video_processor.ffmpeg_exe)
+            self.clips = await asyncio.to_thread(
+                splitter.split_video,
+                video_path=video_path_with_audio,
+                duration_seconds=self.video_duration,
+                interval_seconds=30
+            )
 
-            # Wait for file to be processed
-            max_retries = 60
-            retry_count = 0
-
-            while retry_count < max_retries:
-                file_info = client.files.get(name=file_name)
-
-                if file_info.state.name == "ACTIVE":
-                    break
-
-                await asyncio.sleep(1)
-                retry_count += 1
-
-            if retry_count == max_retries:
-                raise TimeoutError("File processing timeout")
-
-            self.file_uri = uploaded_file.uri
-
+            # Step 3: Upload clips to Gemini
             yield {
                 'type': 'status',
-                'message': f'Video ready for analysis ({self.video_duration:.1f}s)',
+                'message': f'Uploading {len(self.clips)} video segments...',
                 'progress': 15
             }
 
-            # Step 3: Create async queues
+            client = genai.Client(api_key=self.api_key)
+            self.clip_file_uris = []
+
+            for i, clip in enumerate(self.clips):
+                print(f"[STREAMING] Uploading clip {i+1}/{len(self.clips)}: {clip.path.name}")
+
+                # Upload clip
+                uploaded_file = await asyncio.to_thread(
+                    client.files.upload,
+                    file=str(clip.path)
+                )
+                file_name = uploaded_file.name
+
+                # Wait for clip to be processed
+                max_retries = 60
+                retry_count = 0
+
+                while retry_count < max_retries:
+                    file_info = await asyncio.to_thread(
+                        client.files.get,
+                        name=file_name
+                    )
+
+                    if file_info.state.name == "ACTIVE":
+                        break
+
+                    await asyncio.sleep(1)
+                    retry_count += 1
+
+                if retry_count == max_retries:
+                    raise TimeoutError(f"Clip {i+1} processing timeout")
+
+                self.clip_file_uris.append(uploaded_file.uri)
+                print(f"[STREAMING] Clip {i+1}/{len(self.clips)} ready: {uploaded_file.uri}")
+
+                # Update progress
+                progress = 15 + int((i + 1) / len(self.clips) * 10)
+                yield {
+                    'type': 'status',
+                    'message': f'Uploaded segment {i+1}/{len(self.clips)}',
+                    'progress': progress
+                }
+
+            yield {
+                'type': 'status',
+                'message': f'All segments ready for analysis ({self.video_duration:.1f}s)',
+                'progress': 25
+            }
+
+            # Step 4: Create async queues
             event_queue = asyncio.Queue()
             commentary_queue = asyncio.Queue()
             audio_queue = asyncio.Queue()
             chunk_queue = asyncio.Queue()
             sse_event_queue = asyncio.Queue()  # For progress events from all stages
 
-            # Step 4: Launch pipeline stages concurrently
+            # Step 5: Launch pipeline stages concurrently
             print(f"\n[STREAMING] Starting pipeline stages...")
 
             # Create tasks for all pipeline stages
@@ -173,7 +212,7 @@ class StreamingPipeline:
                 ),
             ]
 
-            # Step 5: Consume events from both chunk_queue and sse_event_queue
+            # Step 6: Consume events from both chunk_queue and sse_event_queue
             chunk_index = 0
             total_chunks_expected = self._estimate_chunks()
             chunks_complete = False
@@ -289,7 +328,7 @@ class StreamingPipeline:
 
     async def _detect_events_streaming(self, event_queue: asyncio.Queue, sse_event_queue: asyncio.Queue):
         """
-        Stage 1: Detect events in 30-second intervals and push to queue.
+        Stage 1: Detect events from pre-split clips and push to queue.
 
         Args:
             event_queue: Queue to push detected events
@@ -297,47 +336,55 @@ class StreamingPipeline:
         """
         try:
             print(f"[STREAMING] Starting event detection...")
+            print(f"[STREAMING] Using pre-split clips method (more reliable)")
 
-            # Calculate intervals
-            intervals = calculate_video_intervals(self.video_duration, 30)
-            total_intervals = len(intervals)
+            total_clips = len(self.clips)
 
             # Accumulate all events for saving to events.json
             all_events = []
 
-            for i, (start, end) in enumerate(intervals, 1):
-                print(f"[STREAMING] Analyzing interval {i}/{total_intervals}: {seconds_to_time(start)} - {seconds_to_time(end)}")
+            for i, (clip, file_uri) in enumerate(zip(self.clips, self.clip_file_uris), 1):
+                print(f"[STREAMING] Analyzing clip {i}/{total_clips}: {seconds_to_time(clip.start_time)} - {seconds_to_time(clip.end_time)}")
 
-                # Detect events for this interval
-                events = self.event_detector.detect_events_for_interval(
-                    file_uri=self.file_uri,
-                    interval_start=int(start),
-                    interval_end=int(end)
+                # Detect events for this clip
+                events = await asyncio.to_thread(
+                    self.event_detector.detect_events_for_interval,
+                    file_uri=file_uri,
+                    interval_start=clip.start_time,
+                    interval_end=clip.end_time
                 )
 
                 # Accumulate events
                 all_events.extend(events)
 
-                # Save accumulated events to events.json after each interval
+                # Sort events chronologically before saving
+                all_events.sort(key=lambda e: parse_time_to_seconds(e.time))
+
+                # Save accumulated events to events.json after each clip
                 self.event_detector._save_events(all_events)
 
-                # Push to queue immediately (don't wait for other intervals)
+                # Push to queue immediately (don't wait for other clips)
                 await event_queue.put({
-                    'interval': (int(start), int(end)),
+                    'interval': (clip.start_time, clip.end_time),
                     'events': events,
                     'interval_index': i - 1
                 })
 
-                print(f"[STREAMING] Pushed {len(events)} events from interval {i} to queue (total: {len(all_events)})")
+                print(f"[STREAMING] Pushed {len(events)} events from clip {i} to queue (total: {len(all_events)})")
 
                 # Emit SSE event for progress tracking
                 await sse_event_queue.put({
                     'type': 'events_detected',
                     'count': len(events),
-                    'interval': [int(start), int(end)],
+                    'interval': [clip.start_time, clip.end_time],
                     'interval_index': i - 1,
-                    'total_intervals': total_intervals
+                    'total_intervals': total_clips
                 })
+
+            # Clean up temporary clip files
+            print(f"[STREAMING] Cleaning up temporary clips...")
+            splitter = VideoSplitter(ffmpeg_exe=self.video_processor.ffmpeg_exe)
+            await asyncio.to_thread(splitter.cleanup_clips, self.clips)
 
             # Signal completion
             await event_queue.put(None)
@@ -393,7 +440,7 @@ class StreamingPipeline:
                     commentaries = await asyncio.to_thread(
                         self.commentary_generator.generate_commentary,
                         events=[e.model_dump() for e in events],
-                        video_duration=interval[1],  # Use interval end as max duration
+                        video_duration=self.video_duration,  # Use FULL video duration, not interval end
                         use_streaming=False
                     )
 

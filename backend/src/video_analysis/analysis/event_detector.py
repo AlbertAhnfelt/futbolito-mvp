@@ -10,89 +10,10 @@ from google import genai
 from google.genai import types
 
 from .models import Event, EventsOutput
-from ..video.time_utils import calculate_video_intervals, seconds_to_time, parse_time_to_seconds
+from ..video.time_utils import seconds_to_time, parse_time_to_seconds
+from ..video.video_splitter import VideoClip
 from ..context_manager import get_context_manager
-
-
-# System prompt for event detection (from plan/system_prompt.md)
-EVENT_DETECTION_SYSTEM_PROMPT = """You are an AI video analyzer that detects and catalogs football gameplay events from a given video clip.
-Your goal is to return a single JSON object named events.json that contains all detected events in chronological order.
-
-RULES:
-
-Visual-only analysis:
-Use only the visual information in the video (player movements, ball, referee signals, on-screen text, replays, etc).
-Ignore all audio or commentary.
-
-Event detection:
-Identify all meaningful gameplay moments, such as:
-
-Passes, dribbles, tackles, fouls, saves, shots, goals, throw-ins, corners, free kicks, offsides, etc.
-
-Replays or slow-motion sequences.
-
-Periods of high/low intensity or transitions (e.g., counterattacks).
-
-CRITICAL - MAXIMUM DETAIL REQUIRED:
-Your descriptions MUST be extremely detailed and specific. Follow these rules:
-
-1. PLAYER IDENTIFICATION:
-   - ALWAYS identify players by their jersey number AND name if visible on screen, jerseys, or overlays
-   - If a name appears on screen (e.g., "Zlatan Ibrahimović"), use it in your description
-   - Never use vague terms like "player in yellow jersey" - always specify the player identifier
-   - Format: "Player #10 Messi" or "Zlatan Ibrahimović" or "Player #7"
-
-2. SPECIFIC ACTIONS:
-   - Be extremely precise about the TYPE of action performed
-   - For goals/shots: Specify exact technique (e.g., "bicycle kick", "volley", "header", "chip", "curled shot", "low drive")
-   - For passes: Specify type (e.g., "through ball", "cross", "back pass", "one-two")
-   - For dribbles: Describe moves (e.g., "stepover", "nutmeg", "body feint", "elastico")
-   - For tackles: Specify type (e.g., "sliding tackle", "standing tackle", "interception")
-
-3. POSITIONING AND MOVEMENT:
-   - Include WHERE on the field the action occurs (e.g., "from 30 yards out", "inside the penalty box", "from the left wing")
-   - Describe trajectory of the ball (e.g., "ball arcs over the goalkeeper", "low shot to bottom corner")
-
-4. CONTEXT:
-   - Include relevant defenders, goalkeeper actions, or team dynamics
-   - Mention the score overlay if visible
-   - Note any special circumstances (e.g., "under pressure from two defenders")
-
-Example of GOOD description:
-"Zlatan Ibrahimović (#10) performs an acrobatic bicycle kick from 25 yards out, sending the ball arcing over England goalkeeper Joe Hart into the top corner of the net. Sweden vs England, Ibrahimović falling backwards as he executes the overhead kick."
-
-Example of BAD description (too vague):
-"Player in yellow jersey kicks the ball over the goalie, making the goal."
-
-Output format:
-Return one JSON object with the key "events", containing an array of event objects.
-Each event object must exactly follow this structure:
-
-{
-  "time": "HH:MM:SS",
-  "description": "EXTREMELY DETAILED technical description with specific player names, exact action types, field positions, and ball trajectory.",
-  "replay": false,
-  "intensity": 5
-}
-
-
-Notes:
-
-"time" → timecode in the video when the event starts (HH:MM:SS).
-
-"replay" → boolean: true if it's a replay segment, false if live action.
-
-"intensity" → integer from 1 (calm) to 10 (very intense).
-
-"description" → MUST be highly detailed with specific technique names, player identifications, positions, and trajectories. Minimum 15 words for significant events.
-
-Formatting:
-
-Return only valid JSON.
-
-Do not include any extra explanations, markdown, or comments.
-
-Do not include trailing commas."""
+from ..prompts import EVENT_DETECTION_SYSTEM_PROMPT
 
 
 class EventDetector:
@@ -121,6 +42,10 @@ class EventDetector:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.events_file = self.output_dir / 'events.json'
+        self.time_analyzed_file = self.output_dir / 'time_analyzed.txt'
+
+        # Load time_analyzed from file if it exists, otherwise start at 0
+        self.time_analyzed = self._load_time_analyzed()
 
     def _build_prompt(self, interval_start: int, interval_end: int) -> str:
         """
@@ -146,13 +71,14 @@ class EventDetector:
         prompt_parts.append("")
 
         # Add interval information
+        # Note: Gemini will return timestamps relative to the clip (starting at 00:00:00)
+        # Our post-processing code adjusts these by adding interval_start offset
         start_time = seconds_to_time(interval_start)
         end_time = seconds_to_time(interval_end)
-        prompt_parts.append(f"IMPORTANT: You are analyzing a {interval_end - interval_start}-second segment from {start_time} to {end_time}.")
-        prompt_parts.append(f"All event timestamps should be relative to the FULL VIDEO, not this segment.")
-        prompt_parts.append(f"For example, if you see an event at 0:05 in this segment, and this segment starts at {start_time}, record the time as {start_time} + 0:05.")
+        prompt_parts.append(f"You are analyzing a {interval_end - interval_start}-second video clip.")
+        prompt_parts.append(f"This clip represents the time range {start_time} to {end_time} of the original match.")
         prompt_parts.append("")
-        prompt_parts.append("Analyze this video segment and return the events in JSON format.")
+        prompt_parts.append("Analyze this video clip and return the events in JSON format with timestamps.")
 
         return "\n".join(prompt_parts)
 
@@ -166,9 +92,9 @@ class EventDetector:
         Detect events in a specific time interval of the video.
 
         Args:
-            file_uri: Gemini file URI for the uploaded video
-            interval_start: Start time in seconds
-            interval_end: End time in seconds
+            file_uri: Gemini file URI for the pre-split video clip
+            interval_start: Start time in seconds (in the original video)
+            interval_end: End time in seconds (in the original video)
 
         Returns:
             List of detected Event objects
@@ -182,13 +108,9 @@ class EventDetector:
         # Build prompt with context
         prompt = self._build_prompt(interval_start, interval_end)
 
-        # Create video part with metadata (correct syntax per Gemini API docs)
+        # Create video part for pre-split clip
         video_part = types.Part(
-            file_data=types.FileData(file_uri=file_uri),
-            video_metadata=types.VideoMetadata(
-                start_offset=f"{interval_start}s",
-                end_offset=f"{interval_end}s"
-            )
+            file_data=types.FileData(file_uri=file_uri)
         )
 
         # Create text part for prompt
@@ -223,6 +145,17 @@ class EventDetector:
 
             print(f"[EVENT DETECTOR] Detected {len(events_output.events)} events in this interval")
 
+            # Post-process timestamps: Add interval_start offset to all event times
+            # When using pre-split clips, Gemini returns timestamps relative to the clip (0-30s)
+            # We need to shift them to be relative to the full video
+            for event in events_output.events:
+                # Parse the event time to seconds
+                event_seconds = parse_time_to_seconds(event.time)
+                # Add the interval start offset
+                corrected_seconds = event_seconds + interval_start
+                # Convert back to time format
+                event.time = seconds_to_time(corrected_seconds)
+
             # Log detected event times for debugging
             if events_output.events:
                 for event in events_output.events:
@@ -241,59 +174,78 @@ class EventDetector:
             print(f"[ERROR] Event detection failed: {e}")
             raise RuntimeError(f"Event detection API call failed: {e}")
 
-    def detect_events(
+    def detect_events_from_clips(
         self,
-        file_uri: str,
-        duration_seconds: float,
-        interval_seconds: int = 30
+        clips: List[VideoClip],
+        clip_file_uris: List[str]
     ) -> List[Event]:
         """
-        Detect all events in a video by analyzing 30-second intervals.
+        Detect all events from pre-split video clips.
+
+        This method processes physically split video clips. Each clip is analyzed
+        independently, and timestamps are automatically adjusted to match the full video.
 
         Args:
-            file_uri: Gemini file URI for the uploaded video
-            duration_seconds: Total video duration in seconds
-            interval_seconds: Length of each analysis interval (default: 30)
+            clips: List of VideoClip objects with metadata
+            clip_file_uris: List of Gemini file URIs (one per clip, in order)
 
         Returns:
-            List of all detected events across the entire video
+            List of all detected events across all clips (sorted chronologically)
 
         Example:
             >>> detector = EventDetector(api_key="...")
-            >>> events = detector.detect_events(file_uri="...", duration_seconds=133)
-            >>> print(f"Detected {len(events)} events")
+            >>> splitter = VideoSplitter(ffmpeg_exe="...")
+            >>> clips = splitter.split_video(video_path, duration=133, interval_seconds=30)
+            >>> # Upload each clip to Gemini
+            >>> clip_uris = []
+            >>> for clip in clips:
+            >>>     uploaded = client.files.upload(file=str(clip.path))
+            >>>     clip_uris.append(uploaded.uri)
+            >>> # Detect events
+            >>> events = detector.detect_events_from_clips(clips, clip_uris)
         """
+        if len(clips) != len(clip_file_uris):
+            raise ValueError(f"Mismatch: {len(clips)} clips but {len(clip_file_uris)} URIs")
+
         print(f"\n{'='*60}")
         print(f"EVENT DETECTION STARTED")
         print(f"{'='*60}")
-        print(f"Video duration: {seconds_to_time(duration_seconds)} ({duration_seconds}s)")
-        print(f"Interval length: {interval_seconds}s")
-
-        # Calculate intervals
-        intervals = calculate_video_intervals(duration_seconds, interval_seconds)
-        print(f"Total intervals to analyze: {len(intervals)}")
+        print(f"Total clips to analyze: {len(clips)}")
+        print(f"Time already analyzed: {self.time_analyzed}s ({seconds_to_time(self.time_analyzed)})")
 
         all_events = []
 
-        # Analyze each interval
-        for i, (start, end) in enumerate(intervals, 1):
-            print(f"\n[{i}/{len(intervals)}] Analyzing interval: {seconds_to_time(start)} - {seconds_to_time(end)}")
+        # Analyze each clip
+        for i, (clip, file_uri) in enumerate(zip(clips, clip_file_uris), 1):
+            print(f"\n[{i}/{len(clips)}] Analyzing clip: {seconds_to_time(clip.start_time)} - {seconds_to_time(clip.end_time)}")
+            print(f"[{i}/{len(clips)}] Clip file: {clip.path.name}")
 
             try:
-                events = self.detect_events_for_interval(file_uri, int(start), int(end))
+                # Detect events for this clip
+                events = self.detect_events_for_interval(
+                    file_uri=file_uri,
+                    interval_start=clip.start_time,
+                    interval_end=clip.end_time
+                )
+
                 all_events.extend(events)
 
-                # Save events to file after each interval
+                # Save events to file after each clip
+                # Sort before saving to ensure chronological order
+                all_events.sort(key=lambda e: parse_time_to_seconds(e.time))
                 self._save_events(all_events)
 
-                print(f"[{i}/{len(intervals)}] ✓ Completed. Total events so far: {len(all_events)}")
+                # Update time_analyzed to track progress
+                self._update_time_analyzed(clip.end_time)
+
+                print(f"[{i}/{len(clips)}] ✓ Completed. Total events so far: {len(all_events)}")
 
             except Exception as e:
-                print(f"[{i}/{len(intervals)}] ✗ Failed: {e}")
-                # Continue with next interval even if this one fails
+                print(f"[{i}/{len(clips)}] ✗ Failed: {e}")
+                # Continue with next clip even if this one fails
                 continue
 
-        # Sort events chronologically by time before final save
+        # Final sort to ensure chronological order
         all_events.sort(key=lambda e: parse_time_to_seconds(e.time))
 
         # Save sorted events
@@ -303,6 +255,7 @@ class EventDetector:
         print(f"EVENT DETECTION COMPLETED")
         print(f"{'='*60}")
         print(f"Total events detected: {len(all_events)}")
+        print(f"Total time analyzed: {self.time_analyzed}s ({seconds_to_time(self.time_analyzed)})")
         print(f"Events saved to: {self.events_file} (sorted chronologically)")
 
         return all_events
@@ -350,3 +303,53 @@ class EventDetector:
         if self.events_file.exists():
             self.events_file.unlink()
             print(f"[EVENT DETECTOR] Cleared events file: {self.events_file}")
+
+    def _load_time_analyzed(self) -> int:
+        """
+        Load time_analyzed from file.
+
+        Returns:
+            Number of seconds analyzed (0 if file doesn't exist)
+        """
+        if not self.time_analyzed_file.exists():
+            return 0
+
+        try:
+            with open(self.time_analyzed_file, 'r') as f:
+                value = int(f.read().strip())
+                print(f"[EVENT DETECTOR] Loaded time_analyzed: {value}s")
+                return value
+        except (ValueError, IOError) as e:
+            print(f"[EVENT DETECTOR] Failed to load time_analyzed: {e}, resetting to 0")
+            return 0
+
+    def _save_time_analyzed(self) -> None:
+        """Save time_analyzed to file."""
+        with open(self.time_analyzed_file, 'w') as f:
+            f.write(str(self.time_analyzed))
+        print(f"[EVENT DETECTOR] Saved time_analyzed: {self.time_analyzed}s")
+
+    def _update_time_analyzed(self, interval_end: int) -> None:
+        """
+        Update time_analyzed to the end of the analyzed interval.
+
+        Args:
+            interval_end: End time of the interval that was just analyzed (in seconds)
+        """
+        self.time_analyzed = interval_end
+        self._save_time_analyzed()
+
+    def reset_time_analyzed(self) -> None:
+        """Reset time_analyzed to 0 (for starting a new analysis)."""
+        self.time_analyzed = 0
+        self._save_time_analyzed()
+        print(f"[EVENT DETECTOR] Reset time_analyzed to 0")
+
+    def get_time_analyzed(self) -> int:
+        """
+        Get the current time_analyzed value.
+
+        Returns:
+            Number of seconds of video that have been analyzed
+        """
+        return self.time_analyzed

@@ -11,6 +11,7 @@ from .audio.tts_generator import TTSGenerator
 from .analysis.event_detector import EventDetector
 from .commentary.commentary_generator import CommentaryGenerator
 from .video.video_processor import VideoProcessor
+from .video.video_splitter import VideoSplitter
 from .video.time_utils import parse_time_to_seconds
 
 
@@ -60,46 +61,68 @@ async def analyze_video(filename: str):
         # Get video duration
         video_duration = video_processor.get_video_duration(video_path_with_audio)
 
-        # Upload video to Gemini File API
-        print(f"\nStep 2: Uploading video to Gemini...")
-        print(f"Video: {video_path_with_audio}")
-        uploaded_file = client.files.upload(file=str(video_path_with_audio))
-        file_name = uploaded_file.name
-
-        # Wait for file to be processed and become ACTIVE
-        print(f"Uploaded file: {file_name}")
-        print(f"Waiting for processing...")
-        max_retries = 60  # Wait up to 60 seconds
-        retry_count = 0
-
-        while retry_count < max_retries:
-            file_info = client.files.get(name=file_name)
-
-            if file_info.state.name == "ACTIVE":
-                print(f"✓ File is ready for analysis!")
-                break
-
-            print(f"  File state: {file_info.state.name}. Waiting...")
-            time.sleep(1)
-            retry_count += 1
-
-        if retry_count == max_retries:
-            raise TimeoutError("File processing timeout")
-
-        file_uri = uploaded_file.uri
-
         # ============================================================
-        # PROCESS 1: EVENT DETECTION (30-second intervals)
+        # STEP 2: SPLIT VIDEO INTO CLIPS
         # ============================================================
-        print(f"\nStep 3: Event Detection")
-        print(f"Analyzing video in 30-second intervals...")
+        print(f"\nStep 2: Splitting video into 30-second segments...")
+        print(f"This preprocessing ensures accurate event detection.")
 
-        event_detector = EventDetector(api_key=GEMINI_API_KEY)
-        events = event_detector.detect_events(
-            file_uri=file_uri,
+        splitter = VideoSplitter(ffmpeg_exe=video_processor.ffmpeg_exe)
+        clips = splitter.split_video(
+            video_path=video_path_with_audio,
             duration_seconds=video_duration,
             interval_seconds=30
         )
+
+        # ============================================================
+        # STEP 3: UPLOAD CLIPS TO GEMINI
+        # ============================================================
+        print(f"\nStep 3: Uploading {len(clips)} video segments to Gemini...")
+
+        clip_file_uris = []
+
+        for i, clip in enumerate(clips, 1):
+            print(f"  [{i}/{len(clips)}] Uploading: {clip.path.name}")
+
+            uploaded_file = client.files.upload(file=str(clip.path))
+            file_name = uploaded_file.name
+
+            # Wait for file to be processed and become ACTIVE
+            max_retries = 60
+            retry_count = 0
+
+            while retry_count < max_retries:
+                file_info = client.files.get(name=file_name)
+
+                if file_info.state.name == "ACTIVE":
+                    break
+
+                time.sleep(1)
+                retry_count += 1
+
+            if retry_count == max_retries:
+                raise TimeoutError(f"Clip {i} processing timeout")
+
+            clip_file_uris.append(uploaded_file.uri)
+            print(f"  [{i}/{len(clips)}] ✓ Ready")
+
+        print(f"\n✓ All {len(clips)} segments uploaded and ready!")
+
+        # ============================================================
+        # PROCESS 1: EVENT DETECTION (pre-split clips)
+        # ============================================================
+        print(f"\nStep 4: Event Detection")
+        print(f"Analyzing video using pre-split clips for accuracy...")
+
+        event_detector = EventDetector(api_key=GEMINI_API_KEY)
+        events = event_detector.detect_events_from_clips(
+            clips=clips,
+            clip_file_uris=clip_file_uris
+        )
+
+        # Clean up temporary clips
+        print(f"\n[CLEANUP] Removing temporary clip files...")
+        splitter.cleanup_clips(clips)
 
         print(f"\n✓ Event detection completed!")
         print(f"  Total events detected: {len(events)}")
@@ -108,7 +131,7 @@ async def analyze_video(filename: str):
         # ============================================================
         # PROCESS 2: COMMENTARY GENERATION (from events)
         # ============================================================
-        print(f"\nStep 4: Commentary Generation")
+        print(f"\nStep 5: Commentary Generation")
         print(f"Generating commentary from detected events...")
 
         commentary_generator = CommentaryGenerator(api_key=GEMINI_API_KEY)
@@ -127,9 +150,9 @@ async def analyze_video(filename: str):
         print(f"  Commentaries saved to: output/commentary.json")
 
         # ============================================================
-        # STEP 3: TTS AUDIO GENERATION
+        # STEP 6: TTS AUDIO GENERATION
         # ============================================================
-        print(f"\nStep 5: TTS Audio Generation")
+        print(f"\nStep 6: TTS Audio Generation")
         print(f"Generating audio for {len(commentaries)} commentary segments...")
 
         commentaries_dict = []
@@ -175,9 +198,9 @@ async def analyze_video(filename: str):
                 commentaries_dict.append(commentary_dict)
 
         # ============================================================
-        # STEP 4: VIDEO GENERATION (with 1-second audio delay)
+        # STEP 7: VIDEO GENERATION (with 1-second audio delay)
         # ============================================================
-        print(f"\nStep 6: Video Generation")
+        print(f"\nStep 7: Video Generation")
         print(f"Creating video with commentary overlay...")
         print(f"IMPORTANT: Audio will be delayed by 1 second from start_time")
 
