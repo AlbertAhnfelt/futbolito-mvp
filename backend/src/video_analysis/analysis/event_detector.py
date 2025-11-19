@@ -42,10 +42,6 @@ class EventDetector:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.events_file = self.output_dir / 'events.json'
-        self.time_analyzed_file = self.output_dir / 'time_analyzed.txt'
-
-        # Load time_analyzed from file if it exists, otherwise start at 0
-        self.time_analyzed = self._load_time_analyzed()
 
     def _build_prompt(self, interval_start: int, interval_end: int) -> str:
         """
@@ -211,7 +207,6 @@ class EventDetector:
         print(f"EVENT DETECTION STARTED")
         print(f"{'='*60}")
         print(f"Total clips to analyze: {len(clips)}")
-        print(f"Time already analyzed: {self.time_analyzed}s ({seconds_to_time(self.time_analyzed)})")
 
         all_events = []
 
@@ -235,9 +230,6 @@ class EventDetector:
                 all_events.sort(key=lambda e: parse_time_to_seconds(e.time))
                 self._save_events(all_events)
 
-                # Update time_analyzed to track progress
-                self._update_time_analyzed(clip.end_time)
-
                 print(f"[{i}/{len(clips)}] ✓ Completed. Total events so far: {len(all_events)}")
 
             except Exception as e:
@@ -255,7 +247,6 @@ class EventDetector:
         print(f"EVENT DETECTION COMPLETED")
         print(f"{'='*60}")
         print(f"Total events detected: {len(all_events)}")
-        print(f"Total time analyzed: {self.time_analyzed}s ({seconds_to_time(self.time_analyzed)})")
         print(f"Events saved to: {self.events_file} (sorted chronologically)")
 
         return all_events
@@ -278,78 +269,3 @@ class EventDetector:
             )
 
         print(f"[EVENT DETECTOR] Saved {len(events)} events to {self.events_file}")
-
-    def load_events(self) -> List[Event]:
-        """
-        Load events from events.json file.
-
-        Returns:
-            List of Event objects
-
-        Raises:
-            FileNotFoundError: If events.json doesn't exist
-        """
-        if not self.events_file.exists():
-            raise FileNotFoundError(f"Events file not found: {self.events_file}")
-
-        with open(self.events_file, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-
-        events_output = EventsOutput(**data)
-        return events_output.events
-
-    def clear_events(self) -> None:
-        """Clear events.json file (reset to empty)."""
-        if self.events_file.exists():
-            self.events_file.unlink()
-            print(f"[EVENT DETECTOR] Cleared events file: {self.events_file}")
-
-    def _load_time_analyzed(self) -> int:
-        """
-        Load time_analyzed from file.
-
-        Returns:
-            Number of seconds analyzed (0 if file doesn't exist)
-        """
-        if not self.time_analyzed_file.exists():
-            return 0
-
-        try:
-            with open(self.time_analyzed_file, 'r') as f:
-                value = int(f.read().strip())
-                print(f"[EVENT DETECTOR] Loaded time_analyzed: {value}s")
-                return value
-        except (ValueError, IOError) as e:
-            print(f"[EVENT DETECTOR] Failed to load time_analyzed: {e}, resetting to 0")
-            return 0
-
-    def _save_time_analyzed(self) -> None:
-        """Save time_analyzed to file."""
-        with open(self.time_analyzed_file, 'w') as f:
-            f.write(str(self.time_analyzed))
-        print(f"[EVENT DETECTOR] Saved time_analyzed: {self.time_analyzed}s")
-
-    def _update_time_analyzed(self, interval_end: int) -> None:
-        """
-        Update time_analyzed to the end of the analyzed interval.
-
-        Args:
-            interval_end: End time of the interval that was just analyzed (in seconds)
-        """
-        self.time_analyzed = interval_end
-        self._save_time_analyzed()
-
-    def reset_time_analyzed(self) -> None:
-        """Reset time_analyzed to 0 (for starting a new analysis)."""
-        self.time_analyzed = 0
-        self._save_time_analyzed()
-        print(f"[EVENT DETECTOR] Reset time_analyzed to 0")
-
-    def get_time_analyzed(self) -> int:
-        """
-        Get the current time_analyzed value.
-
-        Returns:
-            Number of seconds of video that have been analyzed
-        """
-        return self.time_analyzed
