@@ -1,12 +1,12 @@
 {
   "teams": {
     "home": {
-      "name": "",
+      "name": "Sweden",
       "shirt_color": null,
       "players": []
     },
     "away": {
-      "name": "",
+      "name": "England",
       "shirt_color": null,
       "players": []
     }

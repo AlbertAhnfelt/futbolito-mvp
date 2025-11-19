@@ -273,11 +273,18 @@ class StreamingPipeline:
             }
 
         except Exception as e:
-            print(f"[STREAMING] ERROR: {e}")
-            print(traceback.format_exc())
+            error_message = str(e)
+            error_traceback = traceback.format_exc()
+            print(f"\n{'='*60}")
+            print(f"[STREAMING] ERROR OCCURRED")
+            print(f"{'='*60}")
+            print(f"Error: {error_message}")
+            print(f"\nFull traceback:")
+            print(error_traceback)
+            print(f"{'='*60}\n")
             yield {
                 'type': 'error',
-                'message': str(e)
+                'message': error_message
             }
 
     async def _detect_events_streaming(self, event_queue: asyncio.Queue, sse_event_queue: asyncio.Queue):

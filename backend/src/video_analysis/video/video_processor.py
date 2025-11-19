@@ -27,8 +27,41 @@ class VideoProcessor:
 
     def __init__(self):
         """Initialize video processor with FFmpeg executable."""
-        self.ffmpeg_exe = get_ffmpeg_exe()
-        print(f"[VIDEO PROCESSOR] Using FFmpeg from: {self.ffmpeg_exe}")
+        self._ffmpeg_exe = None
+        self._ffmpeg_error = None
+
+    @property
+    def ffmpeg_exe(self):
+        """
+        Lazy-load FFmpeg executable path.
+
+        Returns:
+            Path to FFmpeg executable
+
+        Raises:
+            RuntimeError: If FFmpeg cannot be found
+        """
+        if self._ffmpeg_exe is None and self._ffmpeg_error is None:
+            try:
+                self._ffmpeg_exe = get_ffmpeg_exe()
+                print(f"[VIDEO PROCESSOR] Using FFmpeg from: {self._ffmpeg_exe}")
+            except Exception as e:
+                self._ffmpeg_error = str(e)
+                error_msg = (
+                    f"FFmpeg not found: {e}\n\n"
+                    "Please install FFmpeg:\n"
+                    "  - Windows: Download from https://ffmpeg.org/download.html or use 'choco install ffmpeg'\n"
+                    "  - macOS: brew install ffmpeg\n"
+                    "  - Linux: sudo apt-get install ffmpeg\n\n"
+                    "Or set the IMAGEIO_FFMPEG_EXE environment variable to point to your FFmpeg executable."
+                )
+                print(f"\n[VIDEO PROCESSOR] ERROR: {error_msg}\n")
+                raise RuntimeError(error_msg) from e
+
+        if self._ffmpeg_error is not None:
+            raise RuntimeError(f"FFmpeg not available: {self._ffmpeg_error}")
+
+        return self._ffmpeg_exe
 
     def ensure_video_has_audio(self, video_path: Path) -> Path:
         """
