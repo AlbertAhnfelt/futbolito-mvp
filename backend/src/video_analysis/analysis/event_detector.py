@@ -42,6 +42,7 @@ class EventDetector:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.events_file = self.output_dir / 'events.json'
+        self.time_analyzed_file = self.output_dir / 'time_analyzed.txt'
 
     def _build_prompt(self, interval_start: int, interval_end: int) -> str:
         """
@@ -77,6 +78,37 @@ class EventDetector:
         prompt_parts.append("Analyze this video clip and return the events in JSON format with timestamps.")
 
         return "\n".join(prompt_parts)
+
+    def _get_time_analyzed(self) -> int:
+        """
+        Get the current time_analyzed value.
+
+        Returns:
+            Number of seconds analyzed so far (0 if not started)
+        """
+        if not self.time_analyzed_file.exists():
+            return 0
+
+        try:
+            with open(self.time_analyzed_file, 'r') as f:
+                return int(f.read().strip())
+        except (ValueError, IOError):
+            return 0
+
+    def _set_time_analyzed(self, seconds: int) -> None:
+        """
+        Update time_analyzed to the given value.
+
+        CRITICAL: This should ONLY be called AFTER events.json has been written.
+        This ensures downstream processes (like commentary generation) can safely
+        read the new events before being triggered.
+
+        Args:
+            seconds: Number of seconds that have been analyzed
+        """
+        with open(self.time_analyzed_file, 'w') as f:
+            f.write(str(seconds))
+        print(f"[EVENT DETECTOR] Updated time_analyzed to {seconds}s")
 
     def detect_events_for_interval(
         self,
@@ -269,3 +301,125 @@ class EventDetector:
             )
 
         print(f"[EVENT DETECTOR] Saved {len(events)} events to {self.events_file}")
+
+    def detect_events_rolling_window(
+        self,
+        clips: List[VideoClip],
+        clip_file_uris: List[str],
+        video_duration: int
+    ) -> List[Event]:
+        """
+        Detect events using the Producer rolling window workflow.
+
+        This method implements the exact Producer logic flow:
+        - Logic A: Process first 30 seconds (0-30s), write events.json, then update time_analyzed
+        - Logic B: Loop through subsequent 30-second chunks with the same pattern
+
+        CRITICAL: time_analyzed is ONLY updated AFTER events.json is written.
+        This ensures downstream processes can safely read new events.
+
+        Args:
+            clips: List of VideoClip objects (pre-split, in order)
+            clip_file_uris: List of Gemini file URIs (one per clip, in order)
+            video_duration: Total duration of the video in seconds
+
+        Returns:
+            List of all detected events (sorted chronologically)
+        """
+        if len(clips) != len(clip_file_uris):
+            raise ValueError(f"Mismatch: {len(clips)} clips but {len(clip_file_uris)} URIs")
+
+        print(f"\n{'='*60}")
+        print(f"PRODUCER ROLLING WINDOW - EVENT DETECTION STARTED")
+        print(f"{'='*60}")
+        print(f"Video duration: {video_duration}s")
+        print(f"Total clips: {len(clips)}")
+        print(f"Interval: 30 seconds per chunk")
+
+        all_events = []
+
+        # ============================================================
+        # LOGIC A: Initialize with first 30 seconds (0-30s)
+        # ============================================================
+        if len(clips) == 0:
+            print("[ERROR] No clips provided")
+            return []
+
+        first_clip = clips[0]
+        first_uri = clip_file_uris[0]
+
+        print(f"\n{'='*60}")
+        print(f"LOGIC A: INITIALIZATION - First 30 seconds")
+        print(f"{'='*60}")
+        print(f"Processing interval: {seconds_to_time(first_clip.start_time)} - {seconds_to_time(first_clip.end_time)}")
+
+        try:
+            # 1. Analyze first 30 seconds
+            events = self.detect_events_for_interval(
+                file_uri=first_uri,
+                interval_start=first_clip.start_time,
+                interval_end=first_clip.end_time
+            )
+            all_events.extend(events)
+
+            # 2. Write to events.json
+            all_events.sort(key=lambda e: parse_time_to_seconds(e.time))
+            self._save_events(all_events)
+            print(f"[LOGIC A] Events written to {self.events_file}")
+
+            # 3. CRITICAL: Update time_analyzed ONLY AFTER JSON is written
+            self._set_time_analyzed(first_clip.end_time)
+            print(f"[LOGIC A] ✓ Completed first 30 seconds. Total events: {len(all_events)}")
+
+        except Exception as e:
+            print(f"[LOGIC A] ✗ Failed to process first 30 seconds: {e}")
+            raise
+
+        # ============================================================
+        # LOGIC B: Loop through remaining 30-second chunks
+        # ============================================================
+        if len(clips) > 1:
+            print(f"\n{'='*60}")
+            print(f"LOGIC B: ROLLING WINDOW LOOP - Remaining chunks")
+            print(f"{'='*60}")
+            print(f"Remaining clips to process: {len(clips) - 1}")
+
+            for i in range(1, len(clips)):
+                clip = clips[i]
+                uri = clip_file_uris[i]
+
+                print(f"\n[{i}/{len(clips)-1}] Processing interval: {seconds_to_time(clip.start_time)} - {seconds_to_time(clip.end_time)}")
+
+                try:
+                    # 1. Analyze next 30 seconds
+                    events = self.detect_events_for_interval(
+                        file_uri=uri,
+                        interval_start=clip.start_time,
+                        interval_end=clip.end_time
+                    )
+                    all_events.extend(events)
+
+                    # 2. Write to events.json
+                    all_events.sort(key=lambda e: parse_time_to_seconds(e.time))
+                    self._save_events(all_events)
+                    print(f"[LOGIC B] Events written to {self.events_file}")
+
+                    # 3. CRITICAL: Update time_analyzed ONLY AFTER JSON is written
+                    self._set_time_analyzed(clip.end_time)
+                    print(f"[LOGIC B] [{i}/{len(clips)-1}] ✓ Completed. Total events: {len(all_events)}")
+
+                except Exception as e:
+                    print(f"[LOGIC B] [{i}/{len(clips)-1}] ✗ Failed: {e}")
+                    # Continue with next chunk even if this one fails
+                    continue
+
+        # Final summary
+        print(f"\n{'='*60}")
+        print(f"PRODUCER ROLLING WINDOW - COMPLETED")
+        print(f"{'='*60}")
+        print(f"Total events detected: {len(all_events)}")
+        print(f"Final time_analyzed: {self._get_time_analyzed()}s")
+        print(f"Events saved to: {self.events_file}")
+        print(f"Time tracking: {self.time_analyzed_file}")
+
+        return all_events

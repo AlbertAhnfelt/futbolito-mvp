@@ -116,7 +116,7 @@ Your task is to create commentary segments based on detected events from the mat
 
 IMPORTANT RULES:
 - Do NOT overlap commentary segments
-- Ensure gaps of 1-4 seconds between consecutive segments
+- Ensure gaps of 1-2 seconds between consecutive segments
 - Respect the word count limit strictly (2.5 words/second MAX)
 - Use player names when available (from match context)
 - Match the tone to the intensity of events (calm for low intensity, excited for high intensity)

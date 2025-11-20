@@ -3,11 +3,29 @@ from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from pydantic import BaseModel
 from pathlib import Path
 import json
-from video_analysis.controller import list_videos, analyze_video
 from video_analysis.context_manager import get_context_manager, MatchContext
 from video_analysis.streaming_pipeline import streaming_pipeline
 
 router = APIRouter()
+
+
+def list_videos():
+    """
+    List all available video files in the videos directory.
+
+    Returns:
+        List of video filenames (strings)
+    """
+    videos_dir = Path(__file__).parent.parent.parent.parent / 'videos'
+
+    if not videos_dir.exists():
+        return []
+
+    videos = []
+    for video_file in videos_dir.glob('*.mp4'):
+        videos.append(video_file.name)
+
+    return sorted(videos)
 
 
 class AnalyzeRequest(BaseModel):
@@ -22,23 +40,6 @@ async def get_videos_list():
         return JSONResponse(content=videos)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/analyze")
-async def analyze_video_endpoint(request: AnalyzeRequest):
-    """Analyze a video file and extract football highlights."""
-    try:
-        if not request.filename:
-            raise HTTPException(status_code=400, detail="No filename provided")
-
-        highlights = await analyze_video(request.filename)
-        return JSONResponse(content=highlights)
-
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/analyze-stream/{filename}")
 async def analyze_video_stream(filename: str):
