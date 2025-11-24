@@ -164,48 +164,63 @@ async def analyze_video(filename: str, language: str = "en"):
         # Step 5 — OPTIONAL Translation
         _translate_commentaries(client, commentaries, language)
 
-        # Step 6 — TTS Generation (ADAPTED)
-        print("\nStep 5: TTS Audio Generation")
-
+        # Step 6 — TTS Generation (DUAL-VOICE ENABLED)
+        print("\nStep 5: TTS Audio Generation (Two Voices)")
+        
         commentaries_dict = []
-
-        def merge_text_lines(lines):
-            """Merge Lead + Co lines for a single TTS output."""
-            return " ".join([l.line for l in lines])  # 🔄 MODIFIED
-
+        
+        # Voice IDs for the two commentators
+        LEAD_VOICE_ID = "nrD2uNU2IUYtedZegcGx"      # 🎙️ Example voice 1
+        CO_VOICE_ID   = "EXAVITQu4vr4xnSDxMaL"      # 🎙️ Example voice 2
+        
         if ELEVENLABS_API_KEY:
             try:
-                tts_generator = TTSGenerator(
-                    api_key=ELEVENLABS_API_KEY,
-                    default_voice_id="nrD2uNU2IUYtedZegcGx"
-                )
-
+                tts_generator = TTSGenerator(api_key=ELEVENLABS_API_KEY)
+        
                 for i, commentary in enumerate(commentaries):
-                    merged_text = merge_text_lines(commentary.text)
-
-                    print(f"  [{i+1}/{len(commentaries)}] Generating audio...")
-                    print(f"    Text: {merged_text[:80]}...")
-
-                    audio_base64 = tts_generator.generate_audio(merged_text)
-
+                    print(f"  [{i+1}/{len(commentaries)}] Generating TTS for both commentators...")
+        
+                    lead_line = next((l.line for l in commentary.text if l.speaker.lower() == "lead"), "")
+                    co_line   = next((l.line for l in commentary.text if l.speaker.lower() == "co"), "")
+        
+                    # Generate separate audios
+                    print("    → Lead voice...")
+                    audio_lead = tts_generator.generate_audio(
+                        lead_line,
+                        voice_id=LEAD_VOICE_ID
+                    )
+        
+                    print("    → Co-commentator voice...")
+                    audio_co = tts_generator.generate_audio(
+                        co_line,
+                        voice_id=CO_VOICE_ID
+                    )
+        
                     commentary_dict = commentary.model_dump()
-                    commentary_dict['audio_base64'] = audio_base64 or ""
-
+                    commentary_dict["audio_base64_lead"] = audio_lead or ""
+                    commentary_dict["audio_base64_co"] = audio_co or ""
+        
+                    # Optional: You can pre-merge the audio here if desired.
+                    # commentary_dict["audio_base64"] = merge_audio(audio_lead, audio_co)
+        
                     commentaries_dict.append(commentary_dict)
-
-                print("✓ TTS generation completed!")
-
+        
+                print("✓ TTS generation completed for both commentators!")
+        
             except Exception:
-                print("[ERROR] TTS generation failed — using empty audio")
+                print("[ERROR] TTS generation failed — using empty audio tracks")
                 for commentary in commentaries:
                     commentary_dict = commentary.model_dump()
-                    commentary_dict['audio_base64'] = ""
+                    commentary_dict["audio_base64_lead"] = ""
+                    commentary_dict["audio_base64_co"] = ""
                     commentaries_dict.append(commentary_dict)
+        
         else:
             print("[WARN] No ELEVENLABS_API_KEY — skipping TTS")
             for commentary in commentaries:
                 commentary_dict = commentary.model_dump()
-                commentary_dict['audio_base64'] = ""
+                commentary_dict["audio_base64_lead"] = ""
+                commentary_dict["audio_base64_co"] = ""
                 commentaries_dict.append(commentary_dict)
 
         # Step 7 — Video Generation
