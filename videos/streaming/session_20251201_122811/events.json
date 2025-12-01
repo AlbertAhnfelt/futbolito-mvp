@@ -1,0 +1,112 @@
+{
+  "events": [
+    {
+      "time": "00:00:00",
+      "description": "The video opens with a static title screen displaying \"FIFA PUSKÁS AWARD 2013\" in golden text against a black, starry background, indicating the context of the upcoming football highlights.",
+      "replay": false,
+      "intensity": 1
+    },
+    {
+      "time": "00:00:02",
+      "description": "Live action football begins with players in white (England) and yellow (Sweden) jerseys competing for possession around the midfield line. The on-screen scoreboard displays \"90:35 SWE - ENG 3 - 2\" with \"+4\" indicating added time.",
+      "replay": false,
+      "intensity": 2
+    },
+    {
+      "time": "00:00:08",
+      "description": "England goalkeeper Joe Hart (wearing jersey #1) rushes far out of his penalty area towards the right sideline to head away a long, bouncing pass, clearing the ball high into the air. Swedish striker Zlatan Ibrahimović (wearing jersey #10) pursues the loose ball.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:11",
+      "description": "From approximately 30 yards out, Zlatan Ibrahimović (wearing jersey #10) spectacularly executes an acrobatic overhead bicycle kick, connecting with the high, descending ball and sending it arcing majestically over the retreating England defenders and the out-of-position Joe Hart (#1) into the empty net. This astonishing goal extends Sweden's lead.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:13",
+      "description": "Zlatan Ibrahimović (wearing jersey #10) celebrates his phenomenal goal by removing his yellow jersey, revealing extensive tattoos on his back. He runs joyfully towards the fans, with teammates rushing to congratulate him. The scoreboard updates to \"SWE - ENG 4 - 2\".",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:23",
+      "description": "A wide-angle replay of Zlatan Ibrahimović's (wearing jersey #10) bicycle kick goal. The replay clearly shows Joe Hart's (#1) initial header, Ibrahimović's athletic leap and perfect execution of the overhead kick, and the ball sailing into the goal.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:27",
+      "description": "A second replay of Zlatan Ibrahimović's (wearing jersey #10) stunning bicycle kick goal from a closer perspective, positioned behind the goal. This angle emphasizes the technique and height of the shot as the ball arcs over Joe Hart (#1) and defender #5, landing precisely in the net.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:36",
+      "description": "Zlatan Ibrahimović (#10) executes an incredible acrobatic bicycle kick from outside the penalty box, launching the ball towards the goal over the head of England's Gary Cahill (#5) and the out-of-position goalkeeper (#1) after the ball was cleared high.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:39",
+      "description": "Replay showing the ball's trajectory from Zlatan Ibrahimović's (#10) bicycle kick, arcing high over the crossbar and descending perfectly into the top left corner of the net, hitting the inside of the post before settling.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:46",
+      "description": "Replay from a wider angle showing Zlatan Ibrahimović (#10) tracking a long ball, with England's Gary Cahill (#5) close behind and goalkeeper (#1) rushing out from his line, leading to Ibrahimović (#10) performing the spectacular overhead kick just outside the penalty area.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:52",
+      "description": "Zlatan Ibrahimović (#10) gets to his feet after landing from the bicycle kick, turning to face the crowd with a triumphant smile and outstretched arms to celebrate his phenomenal goal, with his name 'IBRAHIMOVIC' visible on his jersey.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:00",
+      "description": "Zlatan Ibrahimović (#10), wearing a yellow Sweden national team jersey, celebrates a spectacular goal by running towards the camera with both arms outstretched and an ecstatic expression of joy on his face, indicating a moment of high triumph.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:01",
+      "description": "A group of female players in dark jerseys, including Player #9, are seen on the field celebrating a goal by embracing each other, showcasing collective joy and strong team camaraderie after a successful play.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:04",
+      "description": "Zlatan Ibrahimović (#10) passionately celebrates a goal by pulling his yellow jersey over his head, revealing his muscular torso and displaying a wide, triumphant smile, a signature celebratory move.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:04",
+      "description": "A male player with jersey #5, wearing a blue kit, celebrates a goal by raising his arms while being embraced and congratulated by a teammate, standing in front of a sponsor hoarding.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:05",
+      "description": "Zlatan Ibrahimović (#10) runs shirtless across the field with a wide, celebratory grin, pointing his arm towards the crowd or the sky, expressing immense jubilation after scoring a goal.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:06",
+      "description": "Three players in red jerseys, one of whom is identifiable as Player #7, are captured running across the field in unison, possibly reacting to a goal or a significant, dynamic play.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:07",
+      "description": "A female player, identified as P. Wilson and wearing jersey #9, forms a heart shape with her hands and directs it towards the camera or the fans in a heartfelt and expressive goal celebration.",
+      "replay": true,
+      "intensity": 8
+    }
+  ]
+}

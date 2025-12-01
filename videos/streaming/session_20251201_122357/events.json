@@ -1,0 +1,88 @@
+{
+  "events": [
+    {
+      "time": "00:00:07",
+      "description": "Player #10 (blue jersey) makes a decisive run with the ball towards the right side of the penalty area, then delivers a precise pass to Player #7 (blue jersey). Player #7 immediately unleashes a powerful low shot from just inside the box, which is bravely blocked by a sliding defender, Player #25 (red jersey), forcing a deflection.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:11",
+      "description": "Following the blocked shot, Player #7 (blue jersey) quickly recovers the ball and takes a second shot that strikes the crossbar. The ball rebounds perfectly for Player #31 (blue jersey), who reacts swiftly with a header, sending the ball into the net beyond the reach of the diving goalkeeper, securing a crucial goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:13",
+      "description": "Player #31 (blue jersey), the goal scorer, immediately turns and raises both arms in exultation, then shares a passionate embrace with teammate Player #13 (blue jersey) right in front of the cheering crowd.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:17",
+      "description": "Player #31 and Player #13 continue their celebration, now joined by other teammates in blue jerseys, exchanging high-fives and hugs, demonstrating strong team unity and excitement after the goal.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:24",
+      "description": "A wide shot captures the enthusiastic reaction of the stadium crowd, mostly clad in red, as they stand, cheer, and wave their hands in the air, reacting to the intense moment of the goal.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:28",
+      "description": "Several players in blue jerseys are seen in a tight celebratory huddle, with Player #31 and Player #13 prominently visible, embracing each other with visible emotion and relief after successfully scoring.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:30",
+      "description": "Two coaches, including one resembling Pep Guardiola, from the Bayern Munich technical area, intensely watch the ongoing match. One coach covers his mouth with his hand, showing concentration, while the other leans forward against the dugout barrier, observing the play.",
+      "replay": false,
+      "intensity": 3
+    },
+    {
+      "time": "00:00:34",
+      "description": "Several Bayern Munich players in dark blue jerseys, including player #7 and player #26, are captured in a moment of emotional celebration or reaction on the field, embracing each other. Player #31 (Fellaini) in a red Manchester United jersey walks past them with a seemingly dejected expression, suggesting a recent goal or significant event has occurred against his team.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:40",
+      "description": "A Bayern Munich player in a dark blue jersey controls the ball in the midfield area, initiating an attacking sequence towards the opposition's goal. He makes a short, precise pass to a teammate positioned centrally, advancing their offensive play inside the Manchester United half.",
+      "replay": false,
+      "intensity": 5
+    },
+    {
+      "time": "00:00:44",
+      "description": "Bayern Munich player #7 receives a through ball inside the left side of the penalty box and immediately strikes a powerful low shot towards the bottom left corner of the goal. The Manchester United goalkeeper reacts with agility, diving swiftly to his left to parry the ball away from the goal with both hands, preventing a goal.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:50",
+      "description": "A replay from an elevated angle shows Bayern Munich player #7's precise low drive from inside the penalty area towards the lower corner of the net, met by the Manchester United goalkeeper's full-stretch diving save to deflect the ball wide, preserving the scoreline.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:53",
+      "description": "Another replay perspective of Bayern Munich player #7's shot and the subsequent diving save by the Manchester United goalkeeper, pushing the ball away with his hands. An on-screen graphic in German simultaneously displays 'Neuer Spielstand. Tor vom FC Bayern.', which translates to 'New score. Goal from FC Bayern.', indicating a goal has been scored by Bayern Munich in the match, despite the visual showing the specific shot in this replay being saved.",
+      "replay": true,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:56",
+      "description": "A third replay angle, this time from behind the goal, captures Bayern Munich player #7's shot and the Manchester United goalkeeper's effective save. Player #31 (Fellaini) is visible in the background, showing clear frustration after the intense offensive play.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:01",
+      "description": "Player #31, wearing a dark blue jersey, executes a powerful header from close range inside the penalty box, directing the ball towards the top right corner of the goal. The goalkeeper, wearing a green kit, dives to his left in an attempt to save but the ball sails past him into the net, resulting in a goal. Player #7 in a red jersey is seen near the goal post.",
+      "replay": false,
+      "intensity": 10
+    }
+  ]
+}
