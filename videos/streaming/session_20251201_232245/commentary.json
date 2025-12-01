@@ -1,0 +1,34 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:08",
+      "end_time": "00:00:19",
+      "commentary": "Hart heads it clear! Zlatan ready! Bicycle kick from distance! OH MY WORD! GOAL! Unbelievable! Sweden 4-2! He celebrates, shirt off! Sensational!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:21",
+      "end_time": "00:00:41",
+      "commentary": "What an absolutely unbelievable, audacious piece of skill from Zlatan Ibrahimović. To even attempt this bicycle kick from that distance, after Hart's headed clearance, shows immense confidence. The technique, the timing, the body shape – it's just sensational football. A truly iconic goal.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:43",
+      "end_time": "00:00:57",
+      "commentary": "Absolutely incredible, truly iconic! The stadium is electric after Zlatan's goal. Deep into stoppage time now, Sweden 4, England 2. What a victory for the Swedes!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:59",
+      "end_time": "00:01:13",
+      "commentary": "Absolutely, this Zlatan goal isn't just iconic for Sweden, it's a footballing masterpiece. The vision and perfect execution of that bicycle kick, seen clearly on replay, is just pure brilliance. Cahill was a spectator.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:15",
+      "end_time": "00:01:29",
+      "commentary": "And you see the passion, the sheer joy from Zlatan! Running with arms outstretched, then he rips the shirt off! What a moment for Ibrahimović and Sweden. Iconic celebration for an iconic goal!",
+      "speaker": "COMMENTATOR_1"
+    }
+  ]
+}

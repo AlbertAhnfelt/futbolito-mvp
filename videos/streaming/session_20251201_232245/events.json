@@ -1,0 +1,136 @@
+{
+  "events": [
+    {
+      "time": "00:00:02",
+      "description": "The football match is live, displaying a score of SWE - ENG 3-2 in the 90th minute plus 4 minutes of added time. A Swedish player in a yellow jersey controls the ball in midfield.",
+      "replay": false,
+      "intensity": 4
+    },
+    {
+      "time": "00:00:04",
+      "description": "Zlatan Ibrahimović (#10) receives a pass near the center circle, chests the ball down, and initiates a dribble forward, evading an initial challenge from an English defender.",
+      "replay": false,
+      "intensity": 5
+    },
+    {
+      "time": "00:00:07",
+      "description": "A long, high pass is launched from midfield towards the English penalty area. England goalkeeper Joe Hart (#1) rushes far out of his penalty box and attempts to head the ball clear, sending it high into the air and away from danger for a moment.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:12",
+      "description": "With the ball descending outside the penalty box after Joe Hart's (#1) clearance, Zlatan Ibrahimović (#10) positions himself, then executes an incredible acrobatic bicycle kick from approximately 25-30 yards out, sending the ball arcing perfectly over the scrambling Joe Hart and into the top corner of the empty net, securing a spectacular goal for Sweden.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:14",
+      "description": "Zlatan Ibrahimović (#10) turns and begins to celebrate his extraordinary goal with a wide smile, running jubilantly towards the crowd. The scoreboard updates to SWE - ENG 4-2.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:16",
+      "description": "Zlatan Ibrahimović (#10) continues his enthusiastic celebration by removing his yellow jersey, revealing several large, intricate tattoos on his back, as he runs triumphantly on the pitch.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:21",
+      "description": "Zlatan Ibrahimović (#10) is embraced by a Swedish teammate, both players sharing a moment of joy and laughter after the astounding goal.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:23",
+      "description": "A replay of the goal begins, showing the initial long aerial pass that led to the scoring opportunity, followed by England goalkeeper Joe Hart (#1) rushing out of his goal to head the ball away, sending it high into the air.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:26",
+      "description": "The replay continues, focusing on Zlatan Ibrahimović (#10) as he perfectly times his jump and body position, then executes the overhead bicycle kick with precision, striking the ball powerfully towards the goal.",
+      "replay": true,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:29",
+      "description": "The replay shows a different angle of Zlatan Ibrahimović's (#10) spectacular shot, highlighting the ball's high, curving trajectory as it sails over the head of the retreating England goalkeeper Joe Hart (#1) and into the empty net.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:38",
+      "description": "Zlatan Ibrahimović (10) executes an extraordinary acrobatic bicycle kick from approximately 25 yards out, sending the ball with incredible power and trajectory over the goalkeeper's head and into the top right corner of the net, scoring a magnificent goal. Gary Cahill (5) is a spectator to the incredible strike.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:43",
+      "description": "Following his spectacular goal, Zlatan Ibrahimović (10) lands on the ground, quickly rising to his feet and initiating a joyful celebration with a wide smile, acknowledging his incredible achievement.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:44",
+      "description": "A slow-motion replay of Zlatan Ibrahimović's (10) incredible bicycle kick. The sequence highlights his athletic leap and precise strike from outside the penalty box, perfectly lobbing the ball over the diving goalkeeper and into the net, followed by his controlled landing.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:54",
+      "description": "Zlatan Ibrahimović (10) continues to celebrate his goal, turning to the crowd with his arms outstretched, revealing his 'IBRAHIMOVIC 10' jersey and a beaming smile, basking in the glory of his magnificent strike.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:00",
+      "description": "Zlatan Ibrahimović (10) in a yellow jersey is shown in a highlight segment, celebrating a goal by running towards the camera with outstretched arms and a wide smile, displaying high emotional intensity after a significant score.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:01",
+      "description": "A group of female football players in black jerseys are seen in a highlight celebrating a goal, embracing each other tightly on the pitch near the opponent's penalty area, showcasing team joy and camaraderie.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:04",
+      "description": "Zlatan Ibrahimović (10) in a yellow jersey appears in another highlight, looking intently to the side with a determined expression, possibly reacting to a score or during a celebratory run.",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:01:04",
+      "description": "A male player in a blue and white jersey (with 'Office Depot' sponsor) is shown in a highlight, raising his arms in triumph towards the crowd, celebrating a goal with a scoreboard briefly indicating 'FUT 1-0'.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:05",
+      "description": "Zlatan Ibrahimović (10) is featured in a highlight, dramatically pulling his yellow jersey over his head as part of a goal celebration, revealing his back and an athletic physique, a common and often controversial celebratory act.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:06",
+      "description": "Multiple male players wearing red jerseys are seen in a highlight, running together on the pitch in close proximity, celebrating a recent goal with shared excitement and collective joy.",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:01:07",
+      "description": "Zlatan Ibrahimović (10), now shirtless after removing his jersey, is captured in a highlight running with a wide grin and a look of immense satisfaction, continuing his passionate goal celebration.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:07",
+      "description": "A female player in a white and blue jersey is shown in a highlight making a heart gesture with her hands towards the camera or crowd, smiling warmly in a moment of personal celebration after scoring or assisting.",
+      "replay": true,
+      "intensity": 6
+    }
+  ]
+}

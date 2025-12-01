@@ -1,0 +1,112 @@
+{
+  "events": [
+    {
+      "time": "00:00:00",
+      "description": "The video opens with a title card displaying \"FIFA PUSKÁS AWARD 2013\" in gold text against a black background with subtle white stars, setting the context for the upcoming highlight.",
+      "replay": false,
+      "intensity": 1
+    },
+    {
+      "time": "00:00:07",
+      "description": "In live action, England goalkeeper Joe Hart (#1) charges aggressively out of his penalty area and clears a long ball with a high header, attempting to prevent Zlatan Ibrahimović (#10) from gaining possession near the box.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:11",
+      "description": "From approximately 25-30 yards outside the penalty box, with his back to the goal, Zlatan Ibrahimović (#10) watches the descending headed clearance from Joe Hart (#1) and executes a spectacular, acrobatic overhead bicycle kick, sending the ball arcing perfectly over the scrambling England goalkeeper and into the top corner of the net for a goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:16",
+      "description": "Zlatan Ibrahimović (#10) celebrates his incredible goal by removing his yellow jersey, revealing detailed tattoos on his back and chest, and running jubilantly with his arms outstretched, acknowledging the crowd and his teammates. The score changes to Sweden 4-2 England on the scoreboard.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:22",
+      "description": "A replay from a high, wide-angle overhead perspective shows the build-up to the goal, capturing Joe Hart's (#1) headed clearance outside the box and Zlatan Ibrahimović's (#10) audacious bicycle kick from midfield, with the ball majestically sailing into the back of the net.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:26",
+      "description": "A second replay, from a closer ground-level angle behind Zlatan Ibrahimović (#10), focuses on the exceptional technique as he leaps into the air to perfectly connect with the ball for the overhead bicycle kick, with Joe Hart (#1) shown diving helplessly as the ball flies past him.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:35",
+      "description": "Zlatan Ibrahimović (#10), wearing a yellow and blue Swedish jersey, skillfully positions himself to receive a high ball from the right flank, preparing for an acrobatic bicycle kick just outside the penalty area, with defender Cahill (#5) closely marking him.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:36",
+      "description": "Zlatan Ibrahimović (#10) launches into the air and executes a breathtaking overhead bicycle kick from approximately 20-25 yards out, powerfully striking the ball high towards the top corner of the goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:38",
+      "description": "The football, struck with incredible power and precision by Zlatan Ibrahimović (#10), arcs perfectly over the fully extended English goalkeeper (#1) and crashes into the top left corner of the net, scoring a magnificent goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:44",
+      "description": "A slow-motion replay from a side angle shows Zlatan Ibrahimović (#10) in mid-air performing the athletic bicycle kick, with the English goalkeeper (#1) leaping futilely in an attempt to block the shot.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:53",
+      "description": "Zlatan Ibrahimović (#10) rises from the ground after his spectacular goal and turns towards the ecstatic crowd, spreading his arms wide in a triumphant celebration, with his name \"IBRAHIMOVIC\" clearly displayed on his back.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:00",
+      "description": "Display of a split-screen montage showcasing FIFA Puskás Award 2013 nominations. On the left, Zlatan Ibrahimović (#10) in a yellow national team jersey is captured running across the pitch with arms outstretched in an ecstatic goal celebration. Concurrently on the right, a women's football team, including Player #9, in black jerseys, is seen in a jubilant group hug and jump on the field, celebrating a scored goal.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:04",
+      "description": "Continuation of the split-screen Puskás Award nomination montage. The left panel shows Zlatan Ibrahimović (#10) in his yellow jersey, turning his back to the camera while intensely celebrating a goal. The right panel displays a men's team celebration, with Player #5 in a blue jersey embracing a teammate on the pitch after a goal.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:05",
+      "description": "Further segment of the split-screen Puskás Award nomination montage. The left panel features Zlatan Ibrahimović (#10) removing his yellow jersey by pulling it over his head, revealing his chest, in a passionate goal celebration. The right panel depicts multiple players in red jerseys from a men's team running together and exchanging high-fives and embraces in their collective goal celebration.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:07",
+      "description": "Climax of the split-screen Puskás Award nomination montage. The left panel shows Zlatan Ibrahimović (#10) running bare-chested with a wide smile and outstretched arms, showcasing his iconic and energetic goal celebration. The right panel features a woman player (#9) in a white and blue jersey making a distinctive heart gesture with her hands, directing it towards the crowd as she celebrates a nominated goal.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:09",
+      "description": "Transition from gameplay highlights to an informational title card. The screen turns black, and golden sparkling particles coalesce to form the bold text 'FIFA PUSKÁS AWARD 2013' in the center, signifying the introduction of the award ceremony.",
+      "replay": false,
+      "intensity": 3
+    },
+    {
+      "time": "00:01:11",
+      "description": "Animated display of the official channel branding. A blue screen with subtle horizontal lines features small white pixel-like elements that converge and form the distinct 'FIFA TV' logo in a digital, glowing animation.",
+      "replay": false,
+      "intensity": 2
+    },
+    {
+      "time": "00:01:13",
+      "description": "Static display of the channel branding. The 'FIFA TV' logo is presented prominently and stably in white text on a consistent blue background with horizontal line patterns, serving as an end-screen or channel identifier.",
+      "replay": false,
+      "intensity": 1
+    }
+  ]
+}
