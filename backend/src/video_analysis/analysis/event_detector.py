@@ -17,7 +17,6 @@ from ..video.time_utils import seconds_to_time, parse_time_to_seconds
 from ..video.video_splitter import VideoClip
 from ..context_manager import get_context_manager
 from ..prompts import EVENT_DETECTION_SYSTEM_PROMPT
-from ..utils.rate_limiter import gemini_rate_limiter
 
 # Try to import StateManager, but allow passing it in __init__ if import fails
 try:
@@ -113,9 +112,6 @@ class EventDetector:
         Implements exponential backoff: 4s -> 8s -> 16s -> 32s -> 60s
         Max 5 attempts before giving up.
         """
-        # Enforce rate limiting before API call
-        gemini_rate_limiter.wait_if_needed()
-
         print("[EVENT DETECTOR] Calling Gemini API...")
         response = self.client.models.generate_content(
             model="gemini-2.5-flash",
