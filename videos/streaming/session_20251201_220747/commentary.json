@@ -1,0 +1,58 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:00",
+      "end_time": "00:00:08",
+      "commentary": "Welcome everyone to the FIFA Puskás Award 2013 presentation. We are here to celebrate the most beautiful goals of the year.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:09",
+      "end_time": "00:00:17",
+      "commentary": "We're into added time now, with Sweden defending a narrow 3-2 lead against England. Every moment here is crucial.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:18",
+      "end_time": "00:00:32",
+      "commentary": "Joe Hart, out of his box! A fantastic header from the England number one! He clears that long ball towards the right touchline, denying the attack. Ibrahimović was anticipating that one!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:33",
+      "end_time": "00:00:47",
+      "commentary": "Outrageous! The audacity of Zlatan Ibrahimović to attempt that bicycle kick from thirty yards. Technical execution, immense power, and a perfect arc over Joe Hart. Truly an unforgettable moment of individual brilliance.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:48",
+      "end_time": "00:01:02",
+      "commentary": "Absolutely incredible! Zlatan Ibrahimović is celebrating, a wide grin across his face as he pulls off his jersey! What a moment! Sweden now leads England 4-2! Unbelievable scenes here!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:03",
+      "end_time": "00:01:18",
+      "commentary": "That's the unadulterated passion of Zlatan Ibrahimović. He lives for these moments, thriving under immense pressure, and a strike of that caliber deserves nothing less. A true showman who understands the theater of the game.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:19",
+      "end_time": "00:01:33",
+      "commentary": "Zlatan Ibrahimović, still shirtless, is met by his Swedish teammate, Player 15! What an embrace of pure joy and triumph after that sensational goal! Sheer happiness radiating from both players on the touchline!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:34",
+      "end_time": "00:01:49",
+      "commentary": "Hart's risky header, outside his box. But Ibrahimović's incredible awareness tracking that high trajectory, already positioning his body for the unimaginable overhead kick. Pure genius, breathtaking anticipation and technique.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:50",
+      "end_time": "00:02:00",
+      "commentary": "Just relive that moment! Ibrahimović defies gravity! The mid-air bicycle kick, perfectly struck! Joe Hart lunges, but it's sailing into the net! Absolutely stunning!",
+      "speaker": "COMMENTATOR_1"
+    }
+  ]
+}

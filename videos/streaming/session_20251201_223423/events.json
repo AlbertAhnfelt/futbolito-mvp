@@ -1,0 +1,166 @@
+{
+  "events": [
+    {
+      "time": "00:00:03",
+      "description": "Player #10 in the blue jersey dribbles the ball forward from midfield, carrying it into the attacking third while being closely marked by multiple red jersey defenders.",
+      "replay": false,
+      "intensity": 4
+    },
+    {
+      "time": "00:00:07",
+      "description": "Player #10 in the blue jersey executes a short pass to Player #13 in the blue jersey, positioned on the right flank inside the attacking third, initiating an offensive move.",
+      "replay": false,
+      "intensity": 5
+    },
+    {
+      "time": "00:00:08",
+      "description": "Player #13 in the blue jersey delivers a precise low, driven cross from the right wing into the center of the penalty area, aiming for an unmarked teammate.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:11",
+      "description": "Player #7 in the blue jersey receives the low cross inside the six-yard box and swiftly unleashes a powerful right-footed shot, driving the ball into the top left corner of the net for a goal, past the diving red team goalkeeper.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:13",
+      "description": "Player #7 in the blue jersey celebrates his goal, being enthusiastically embraced by teammates, including Player #10 and Player #13, who both raise their fists in triumph as the crowd roars.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:24",
+      "description": "The stadium crowd, predominantly dressed in red, rises to their feet, cheering loudly and waving scarves and flags in an ecstatic celebration of the goal just scored by the blue team.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:28",
+      "description": "Several players in blue jerseys gather in a close huddle near the goal line, continuing their fervent celebration, embracing and shouting joyfully in recognition of their successful strike.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:30",
+      "description": "Bayern Munich head coach Pep Guardiola (bald, in suit) is seen leaning over the dugout railing, intently watching the game and engaging in an animated discussion with a fellow coaching staff member (wearing a Bayern Munich tracksuit jacket).",
+      "replay": false,
+      "intensity": 2
+    },
+    {
+      "time": "00:00:34",
+      "description": "Bayern Munich players, including Bastian Schweinsteiger (#31), David Alaba (#27), and Mario Mandžukić (#9), are gathered on the field, expressing jubilant celebrations, hugging and showing strong emotions following a goal.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:40",
+      "description": "During live gameplay, a Bayern Munich player (wearing a blue and red striped kit) dribbles the ball on the right wing towards the edge of the penalty area before delivering a short, precise pass to Franck Ribery (#7). Ribery collects the ball just inside the left side of the penalty box and immediately takes a powerful low shot with his left foot towards the bottom far corner of the goal.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:46",
+      "description": "Manchester United goalkeeper David de Gea makes a crucial diving save to his left, extending his leg to deflect Franck Ribery's (#7) on-target low shot away from the goal, preventing it from entering the net.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:49",
+      "description": "A slow-motion replay from a different angle shows Franck Ribery (#7) striking a left-footed shot from inside the penalty area, followed by Manchester United goalkeeper David de Gea's decisive diving save with his leg to block the ball.",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:56",
+      "description": "A replay displays Bastian Schweinsteiger (#31) scoring a goal with a powerful header, converting a corner kick into the top right corner of the net from close range, despite the challenge from Manchester United's Marouane Fellaini (#31). The German stadium announcer confirms \"Neue Spielstand, Tor von FC Bayern\" (New score, goal for FC Bayern).",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:01",
+      "description": "Bastian Schweinsteiger (#31, dark blue jersey) scores a goal with a powerful close-range header from inside the six-yard box, directing the ball past the diving Manchester United goalkeeper David de Gea (green kit) and into the back of the net. Manchester United's Phil Jones (#4, red jersey) is also visible near the goal line, attempting to defend.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:05",
+      "description": "A promotional segment starts, featuring Cristiano Ronaldo (#7) in a white Real Madrid jersey celebrating a goal on a green pitch. In the adjacent panel, a close-up shot of a football pitch shows dirt and grass being kicked up by an unseen powerful shot.",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:01:06",
+      "description": "A promotional segment shows Cristiano Ronaldo (#7) celebrating a goal with 'GREAT GOALS' text overlay. Concurrently, another highlight shows a close-up of a player's leg (yellow socks) powerfully striking a football, sending turf into the air.",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:01:07",
+      "description": "Promotional content displays Barcelona players (including #8, #30, #14) in a team huddle with 'CLASSIC MATCHES' text. Simultaneously, a highlight reel shows Player #99 (yellow jersey) scoring a goal from just outside the penalty area, a low shot beating the diving goalkeeper.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:08",
+      "description": "A promotional segment features Ronaldinho with a contemplative expression. Simultaneously, another highlight shows Player #11 (blue jersey) performing an acrobatic forward flip as part of a goal celebration.",
+      "replay": true,
+      "intensity": 5
+    },
+    {
+      "time": "00:01:09",
+      "description": "Promotional content displays Ronaldinho with a 'LEGENDARY PLAYERS' text overlay. On the right, a player in a blue jersey performs an acrobatic forward flip, likely a goal celebration, similar to the previous clip.",
+      "replay": true,
+      "intensity": 5
+    },
+    {
+      "time": "00:01:10",
+      "description": "Promotional content features Ronaldinho speaking directly to the camera. Concurrently, a gameplay highlight shows Player #10 (yellow jersey) on the field, possibly dribbling or passing, with another player in a white jersey nearby.",
+      "replay": true,
+      "intensity": 4
+    },
+    {
+      "time": "00:01:11",
+      "description": "A promotional clip shows a football striking the crossbar and deflecting into the goal in slow motion. Simultaneously, a vibrant highlight shows a young boy and a crowd of fans celebrating enthusiastically, waving national flags.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:12",
+      "description": "A promotional segment displaying 'STAR CHALLENGES' text over a goal net. Concurrently, a highlight shows a player in a black jersey unleashing a powerful shot towards the goal from outside the penalty area.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:13",
+      "description": "A highlight clip shows the football settling in the back of the net, following a powerful shot seen in the previous segment. The left panel shows a static image of a goal net.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:14",
+      "description": "Promotional content with 'STAR CHALLENGES' text overlay. On the right, a new highlight clip shows a player in a black jersey taking a shot on goal from outside the box, with the goalkeeper positioned to save.",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:01:15",
+      "description": "A highlight clip shows a goalkeeper in a yellow jersey making a full-stretch dive to save a powerful shot, deflecting the ball away from the goal. The left panel shows a static image of a goal net.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:16",
+      "description": "Promotional segment with 'BEHIND THE SCENES' text displayed over a player's profile shot. Concurrently, a highlight shows a player in a white jersey executing a header during gameplay, with an opponent in a red jersey nearby.",
+      "replay": true,
+      "intensity": 5
+    },
+    {
+      "time": "00:01:17",
+      "description": "Promotional content with 'BEHIND THE SCENES' text overlay. On the right, a highlight shows a player in a red jersey running with the ball during a match, advancing up the field.",
+      "replay": true,
+      "intensity": 4
+    }
+  ]
+}

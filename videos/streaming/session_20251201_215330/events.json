@@ -1,0 +1,124 @@
+{
+  "events": [
+    {
+      "time": "00:00:01",
+      "description": "Player #10 in the dark blue jersey receives the ball in midfield and initiates a dribbling run forward, advancing towards the attacking third on the right flank, actively marked by Manchester United defenders in red.",
+      "replay": false,
+      "intensity": 5
+    },
+    {
+      "time": "00:00:06",
+      "description": "Player #10 delivers a precise through pass to Rafinha (#13), who is making a strong run along the right wing towards the edge of the penalty area.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:07",
+      "description": "Rafinha (#13) receives the ball near the right byline, takes a quick touch, and attempts a low cross into the penalty box, but a Manchester United defender swiftly intercepts and blocks the pass.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:09",
+      "description": "Following the blocked cross, a Bayern Munich player (#7) quickly reacts to the loose ball inside the penalty area, heading it directly towards the Manchester United goal, compelling the goalkeeper to make a sprawling save, deflecting the ball back into play.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:10",
+      "description": "Player #31, surging into the penalty box, collects the rebound from the goalkeeper's save and strikes a powerful right-footed shot from approximately six yards out, sending the ball cleanly into the bottom right corner of the net for a crucial goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:12",
+      "description": "Player #31 raises his arms in sheer jubilation after scoring, subsequently embracing Rafinha (#13) as they celebrate the goal, both players visibly radiating excitement and pride.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:23",
+      "description": "The large crowd in the stadium, predominantly composed of supporters dressed in red, erupts into enthusiastic cheers and applause, with numerous fans standing and raising their arms high in celebration of the recently scored goal.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:27",
+      "description": "Several Bayern Munich players gather in a tight huddle near the touchline, hugging and patting each other on the back, collectively sharing their joy and triumph after scoring the important goal, with Player #10 also seen among the celebrating group.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:30",
+      "description": "Bayern Munich head coach Pep Guardiola (wearing a suit) and another team staff member are intently observing the game from the sideline, with the staff member showing an animated reaction by covering his mouth.",
+      "replay": false,
+      "intensity": 2
+    },
+    {
+      "time": "00:00:34",
+      "description": "Several Bayern Munich players, including Bastian Schweinsteiger (#31), David Alaba (#27), and Mario Mandžukić (#9), are seen celebrating on the field, hugging each other, indicating a significant positive event like a goal has just occurred.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:39",
+      "description": "Live action gameplay shows a Bayern Munich player dribbling the ball through the midfield, advancing towards the Manchester United penalty area. The ball is then passed to Franck Ribéry (#7) inside the box, who takes a powerful low drive shot towards the bottom left corner of the goal, which is skillfully saved by the Manchester United goalkeeper diving to his right.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:47",
+      "description": "A replay sequence shows Franck Ribéry (#7) of Bayern Munich receiving a precise pass inside the penalty area from the left side. He takes a clinical low shot with his left foot, sending the ball past the diving Manchester United goalkeeper and into the bottom right corner of the net. The on-screen text \"Neuer Spielstand. Tor von FC Bayern.\" (New score. Goal for FC Bayern.) confirms the goal.",
+      "replay": true,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:56",
+      "description": "The replay continues, showing the ball settled in the back of the net after the goal by Franck Ribéry (#7). Manchester United defender Marouane Fellaini (#31) reacts with visible disappointment as the Bayern Munich scorer (Franck Ribéry #7) is seen acknowledging the goal.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:02",
+      "description": "Live action goal scored. Player #31 (blue jersey) makes close-range contact with the ball, possibly a header or deflection, from within the six-yard box, sending it powerfully past the outstretched arm of the diving goalkeeper (green jersey) and into the top right corner of the net. Player #4 (red jersey) is positioned near the goal line, unable to block the shot.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:05",
+      "description": "A highlight clip features Cristiano Ronaldo (white jersey) celebrating a goal, running jubilantly with a clenched fist and an ecstatic expression, with \"GREAT GOALS\" text appearing briefly on screen.",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:01:07",
+      "description": "A highlight clip shows a player in a yellow jersey, identified by #889 on his back, executing a precise low shot from just outside the penalty box, finding the bottom left corner of the net as the opposition goalkeeper dives unsuccessfully. The text \"CLASSIC MATCHES\" appears briefly.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:09",
+      "description": "A highlight clip begins with a close-up of Ronaldinho (blue and red jersey) with a focused expression, transitioning to another player performing an impressive acrobatic backflip celebration on the field after scoring.",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:01:12",
+      "description": "A highlight clip displays Ronaldinho (blue and red jersey) prominently with the on-screen title \"LEGENDARY PLAYERS,\" followed by a powerful shot hitting the crossbar and then bouncing into the goal net.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:15",
+      "description": "A highlight clip features a player in a black jersey taking a strong, driven shot from approximately 25 yards out, with the ball subsequently shown in a different angle entering the top left corner of the goal past a diving goalkeeper. The text \"STAR CHALLENGES\" is shown.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:17",
+      "description": "A highlight clip shows a player in a red jersey performing a header from close range inside the penalty area, directing the ball into the net as the opposition goalkeeper attempts to block the shot. The text \"BEHIND THE SCENES\" is visible.",
+      "replay": true,
+      "intensity": 7
+    }
+  ]
+}

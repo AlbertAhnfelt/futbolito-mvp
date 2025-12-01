@@ -1,0 +1,136 @@
+{
+  "events": [
+    {
+      "time": "00:00:03",
+      "description": "Player #10 of the away team (dark blue kit) receives the ball in his own half, dribbles past a red-jersey opponent, and carries the ball into the attacking half, initiating an offensive play down the right side of the field.",
+      "replay": false,
+      "intensity": 4
+    },
+    {
+      "time": "00:00:05",
+      "description": "Player #10 of the away team plays a precise through ball from just inside the center circle, aiming towards the right wing run of Player #13, sending the ball along the ground.",
+      "replay": false,
+      "intensity": 5
+    },
+    {
+      "time": "00:00:08",
+      "description": "Player #13 of the away team receives the ball on the right edge of the penalty area, cuts inside with a quick touch, and attempts a left-footed shot towards the goal, which is immediately blocked by a sliding tackle from home team defender #4.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:10",
+      "description": "After the blocked shot, the ball rebounds to Player #25 of the away team inside the penalty area, who quickly delivers a short, accurate pass to Player #7 in a central position, setting up another scoring opportunity.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:11",
+      "description": "Player #7 of the away team receives the ball from Player #25 inside the crowded penalty area and takes a quick shot towards goal, which deflects off a home team defender, altering its trajectory significantly.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:12",
+      "description": "Following the deflection, Player #31 of the away team reacts instantly to the loose ball inside the six-yard box and strikes it powerfully with his right foot, scoring a decisive goal into the top right corner of the net, leaving the goalkeeper with no chance.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:13",
+      "description": "Player #31 of the away team celebrates his goal by running towards the corner flag with both arms raised high, a wide smile on his face, quickly joined by Player #13 who claps him on the back.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:18",
+      "description": "Player #31 and Player #13 of the away team embrace each other warmly, with other teammates also joining the celebratory huddle near the corner of the field, acknowledging the crucial goal and sharing their excitement.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:25",
+      "description": "A wide shot shows the enthusiastic crowd in the stadium, primarily dressed in red, cheering loudly and waving their scarves and hands in excitement, reacting to the recently scored goal.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:29",
+      "description": "A group of away team players are seen in a tight celebratory huddle near the sideline, patting each other on the back and sharing high-fives, demonstrating strong team cohesion after scoring a vital goal.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:30",
+      "description": "Bayern manager Pep Guardiola, wearing a suit, intently watches the game from the dugout, while a fellow coach next to him, wearing a Bayern jacket, covers his mouth with his hand, showing a strong emotional reaction, possibly to an ongoing play or a recent event on the field.",
+      "replay": false,
+      "intensity": 5
+    },
+    {
+      "time": "00:00:34",
+      "description": "Bayern players on the pitch are seen reacting to a significant moment. David Alaba (#27) raises his right hand in what appears to be a signal or acknowledgement, then embraces teammate Mario Mandžukić (#9) in celebration or camaraderie, with Bastian Schweinsteiger (#31) also present, observing the interaction.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:39",
+      "description": "In live action, Toni Kroos (#39) receives the ball near the top of the penalty area. He executes a precise pass into the box on the left side, finding Franck Ribéry (#7), who takes a first-time left-footed shot towards the near post. Manchester United goalkeeper David de Gea (#1) dives swiftly to his right, making a critical save by pushing the ball wide with his right hand.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:50",
+      "description": "A replay from a closer angle shows Toni Kroos (#39) delivering a perfectly weighted pass to Franck Ribéry (#7) inside the box. Ribéry then strikes a low, powerful left-footed shot aimed at the bottom left corner of the goal. David de Gea (#1), the Manchester United goalkeeper, dives full stretch to his right and parries the ball away with his right hand, preventing a goal.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:56",
+      "description": "The replay continues with another perspective of Franck Ribéry's (#7) shot and David de Gea's (#1) athletic save. Marouane Fellaini (#31) of Manchester United is seen running towards the play. Despite the visual evidence of a save, an on-screen stadium announcement is visible, stating 'Neuer Spielstand. Tor von FC Bayern.' (New score. Goal from FC Bayern.), indicating a goal was announced.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:01",
+      "description": "Player #31, wearing a dark blue and red kit, scores a goal from very close range inside the penalty area, heading the ball into the top corner of the net past the diving goalkeeper in green. Player #4 in the red kit is positioned nearby as the ball crosses the line.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:05",
+      "description": "A replay clip shows Cristiano Ronaldo in a white jersey celebrating a goal with a fist pump on the pitch, followed by a separate replay showing a powerful kick making contact with a football on the grass.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:07",
+      "description": "A replay clip from a wide angle captures a player in a yellow and black kit scoring a goal with a low, driven shot from just outside the penalty box, beating the diving goalkeeper to his right.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:09",
+      "description": "A replay clip features a player in a blue kit performing an acrobatic backflip celebration on the field after a significant play, with another player in a red kit observing nearby.",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:01:11",
+      "description": "A close-up replay shows a football forcefully striking the back of the net after a goal, followed by a cut to a young child in a yellow jersey celebrating joyfully with other fans in the stands.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:14",
+      "description": "A replay clip from a wide angle shows a player in a dark kit striking the ball from a considerable distance outside the penalty area, sending it into the top corner of the net past the goalkeeper's desperate dive, resulting in a spectacular goal.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:16",
+      "description": "A replay clip shows a player in a white jersey executing a powerful header from inside the penalty area, sending the ball towards the goal while closely challenged by a defender.",
+      "replay": true,
+      "intensity": 7
+    }
+  ]
+}

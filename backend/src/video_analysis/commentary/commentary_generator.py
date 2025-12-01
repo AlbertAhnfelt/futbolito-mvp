@@ -3,6 +3,7 @@ Commentary generation module with dual commentator support.
 Generates football commentary from detected events using Gemini API.
 """
 
+import asyncio
 import json
 import re
 from pathlib import Path
@@ -15,7 +16,7 @@ from google.api_core.exceptions import ResourceExhausted
 from .models import Commentary, CommentaryOutput
 from ..video.time_utils import parse_time_to_seconds, seconds_to_time, validate_commentary_duration
 from ..context_manager import get_context_manager
-from ..prompts import COMMENTARY_SYSTEM_PROMPT
+from ..prompts import COMMENTARY_SYSTEM_PROMPT, COMMENTARY_SYSTEM_PROMPT_1, COMMENTARY_SYSTEM_PROMPT_2, COMMENTARY_SYSTEM_CORE
 
 # Try to import StateManager, but allow passing it in __init__ if import fails
 try:
@@ -394,3 +395,201 @@ class CommentaryGenerator:
         if self.commentary_file.exists():
             self.commentary_file.unlink()
             print(f"[COMMENTARY] Cleared commentary file: {self.commentary_file}")
+
+    def _build_single_commentary_prompt(
+        self,
+        events: List[dict],
+        events_covered: set,
+        speaker: str,
+        previous_commentaries: List[Commentary],
+        previous_commentary_end: Optional[str],
+        video_duration: float
+    ) -> str:
+        """
+        Build prompt for generating a single commentary entry covering multiple events.
+        Includes previous commentaries for natural conversational flow.
+
+        Args:
+            events: All events from the interval
+            events_covered: Set of event times already covered by previous commentaries
+            speaker: "COMMENTATOR_1" or "COMMENTATOR_2"
+            previous_commentaries: List of all previous Commentary objects for context
+            previous_commentary_end: End time of previous commentary (or None for first)
+            video_duration: Total video duration in seconds
+
+        Returns:
+            Complete prompt string for single commentary
+        """
+        prompt_parts = []
+
+        # Add match context if available
+        context_text = self.context_manager.format_for_prompt()
+        if context_text:
+            prompt_parts.append(context_text)
+            prompt_parts.append("")
+
+        # Add role-specific system prompt
+        if speaker == "COMMENTATOR_1":
+            prompt_parts.append(COMMENTARY_SYSTEM_PROMPT_1)
+        else:
+            prompt_parts.append(COMMENTARY_SYSTEM_PROMPT_2)
+
+        prompt_parts.append("")
+        prompt_parts.append(COMMENTARY_SYSTEM_CORE)
+        prompt_parts.append("")
+
+        # Add previous commentaries for conversational context
+        if previous_commentaries:
+            prompt_parts.append("="*60)
+            prompt_parts.append("PREVIOUS COMMENTARY (for conversational context):")
+            prompt_parts.append("="*60)
+            for prev in previous_commentaries:
+                prompt_parts.append(f"[{prev.start_time} - {prev.end_time}] {prev.speaker}:")
+                prompt_parts.append(f'  "{prev.commentary}"')
+                prompt_parts.append("")
+            prompt_parts.append("="*60)
+            prompt_parts.append(f"You are now {speaker}. Respond naturally to continue the conversation.")
+            prompt_parts.append("Build on what was said, react to previous comments, and maintain dialogue flow.")
+            prompt_parts.append("="*60)
+            prompt_parts.append("")
+
+        # Filter out already covered events
+        remaining_events = [e for e in events if e.get('time') not in events_covered]
+
+        # Add event data
+        prompt_parts.append("AVAILABLE EVENTS TO COMMENTATE:")
+        prompt_parts.append(json.dumps({"events": remaining_events}, indent=2))
+        prompt_parts.append("")
+
+        if events_covered:
+            prompt_parts.append(f"NOTE: {len(events_covered)} events have already been covered by previous commentaries.")
+            prompt_parts.append("")
+
+        # Add timing context
+        prompt_parts.append(f"VIDEO DURATION: {seconds_to_time(video_duration)}")
+        if previous_commentary_end:
+            prompt_parts.append(f"PREVIOUS COMMENTARY ENDED AT: {previous_commentary_end}")
+            prev_seconds = parse_time_to_seconds(previous_commentary_end)
+            min_start = prev_seconds + 1.0  # Minimum 1s gap
+            prompt_parts.append(f"YOUR COMMENTARY MUST START AT OR AFTER: {seconds_to_time(min_start)}")
+        else:
+            prompt_parts.append("This is the FIRST commentary of the match.")
+        prompt_parts.append("")
+
+        # Add specific instructions
+        prompt_parts.append("Generate ONE commentary segment that:")
+        prompt_parts.append(f"1. Is spoken by {speaker}")
+        prompt_parts.append("2. Is 10-20 seconds long")
+        prompt_parts.append("3. Has 1-2 second gap from previous commentary")
+        prompt_parts.append("4. Stays within word limit (2.5 words/second MAX)")
+        prompt_parts.append("5. Covers the EARLIEST uncovered events from the list above")
+        prompt_parts.append("6. Can reference multiple events if they occur close together in time")
+        prompt_parts.append("7. Focuses on the most significant events in your time window")
+        if previous_commentaries:
+            prompt_parts.append("8. RESPONDS NATURALLY to what was previously said in the conversation")
+            prompt_parts.append("9. Maintains conversational flow and builds on previous comments")
+        prompt_parts.append("")
+        prompt_parts.append("CRITICAL: All timestamps MUST use integer seconds in HH:MM:SS format (e.g., 00:00:42, NOT 00:00:42.5)")
+        prompt_parts.append("")
+        prompt_parts.append("Return a JSON object with ONE commentary:")
+        prompt_parts.append("""{
+  "commentaries": [
+    {
+      "start_time": "HH:MM:SS",
+      "end_time": "HH:MM:SS",
+      "commentary": "Your commentary text here",
+      "speaker": "%s"
+    }
+  ]
+}""" % speaker)
+
+        return "\n".join(prompt_parts)
+
+    @retry(
+        retry=retry_if_exception_type(ResourceExhausted),
+        wait=wait_exponential(multiplier=2, min=4, max=60),
+        stop=stop_after_attempt(5)
+    )
+    async def generate_single_commentary(
+        self,
+        events: List[dict],
+        events_covered: set,
+        speaker: str,
+        previous_commentaries: List[Commentary],
+        previous_commentary_end: Optional[str],
+        video_duration: float
+    ) -> tuple[Commentary, set]:
+        """
+        Generate a single 10-20 second commentary entry covering multiple events with one API call.
+        Includes previous commentaries for natural conversational flow.
+
+        Args:
+            events: All events from the interval
+            events_covered: Set of event times already covered
+            speaker: "COMMENTATOR_1" or "COMMENTATOR_2"
+            previous_commentaries: List of all previous Commentary objects for conversational context
+            previous_commentary_end: End time of previous commentary (or None for first)
+            video_duration: Total video duration in seconds
+
+        Returns:
+            Tuple of (Commentary object, Set of event times covered in this commentary)
+
+        Raises:
+            ValueError: If response is invalid
+            RuntimeError: If API call fails
+        """
+        remaining = len([e for e in events if e.get('time') not in events_covered])
+        print(f"[COMMENTARY] Generating single commentary as {speaker} ({remaining} events remaining, {len(previous_commentaries)} previous commentaries for context)")
+
+        # Build prompt with conversational context
+        prompt = self._build_single_commentary_prompt(
+            events,
+            events_covered,
+            speaker,
+            previous_commentaries,
+            previous_commentary_end,
+            video_duration
+        )
+
+        try:
+            # Call API with retry logic
+            response_text = await asyncio.to_thread(
+                self._call_gemini_api_with_retry,
+                prompt
+            )
+
+            # Parse JSON and sanitize timestamps
+            commentary_data = json.loads(response_text)
+            commentary_data = self._sanitize_timestamps(commentary_data)
+            commentary_output = CommentaryOutput(**commentary_data)
+
+            if not commentary_output.commentaries:
+                raise ValueError("No commentary generated in response")
+
+            # Return the single commentary
+            commentary = commentary_output.commentaries[0]
+
+            # Determine which events were covered by this commentary
+            # Events within the commentary time window are considered covered
+            commentary_start = parse_time_to_seconds(commentary.start_time)
+            commentary_end = parse_time_to_seconds(commentary.end_time)
+
+            newly_covered = set()
+            for event in events:
+                event_time = parse_time_to_seconds(event.get('time', '00:00:00'))
+                # Mark event as covered if it falls within or near this commentary's timeframe
+                if commentary_start - 2 <= event_time <= commentary_end + 2:
+                    newly_covered.add(event.get('time'))
+
+            print(f"[COMMENTARY] Generated: {commentary.start_time} - {commentary.end_time} ({speaker}), covered {len(newly_covered)} events")
+
+            return commentary, newly_covered
+
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] Failed to parse JSON response: {e}")
+            print(f"[ERROR] Response text: {response_text}")
+            raise ValueError(f"Invalid JSON response from Gemini: {e}")
+
+        except Exception as e:
+            print(f"[ERROR] Single commentary generation failed: {e}")
+            raise RuntimeError(f"Commentary generation API call failed: {e}")

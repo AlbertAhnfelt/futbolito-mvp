@@ -330,7 +330,7 @@ class StreamingPipeline:
             final_video = await self._create_final_video(chunk_index)
 
             # Completion event
-            final_video_url = f'/videos/generated/{final_video}' if final_video else ''
+            final_video_url = f'/videos/streaming/{self.session_id}/{final_video}' if final_video else ''
             yield {
                 'type': 'complete',
                 'chunks': chunk_index,
@@ -421,7 +421,8 @@ class StreamingPipeline:
         sse_event_queue: asyncio.Queue
     ):
         """
-        Stage 2: Generate commentary for each interval immediately.
+        Stage 2: Generate 10-20 second commentaries with separate API calls.
+        Each commentary can cover multiple events and responds to previous commentaries.
 
         Args:
             event_queue: Input queue with detected events
@@ -429,9 +430,14 @@ class StreamingPipeline:
             sse_event_queue: Queue to push SSE progress events
         """
         try:
-            print(f"[STREAMING] Starting commentary generation...")
+            print(f"[STREAMING] Starting commentary generation (one API call per commentary, 10-20s each, conversational flow)...")
 
             interval_index = 0
+            previous_commentary_end = None
+            commentary_count = 0
+
+            # Track all generated commentaries for conversational context
+            all_commentaries = []
 
             while True:
                 event_batch = await event_queue.get()
@@ -443,31 +449,50 @@ class StreamingPipeline:
                 interval = event_batch['interval']
                 events = event_batch['events']
 
-                print(f"[STREAMING] Generating commentary for interval {interval} ({len(events)} events)")
+                print(f"[STREAMING] Processing interval {interval} with {len(events)} events")
 
                 if not events:
                     print(f"[STREAMING] No events in interval {interval}, skipping commentary")
                     interval_index += 1
                     continue
 
-                # Generate commentary for just these events
-                # NOTE: generate_commentary is now async and saves to StateManager internally
-                try:
-                    commentaries = await self.commentary_generator.generate_commentary(
-                        events=[e.model_dump() for e in events],
-                        video_duration=self.video_duration,  # Use FULL video duration, not interval end
-                        use_streaming=False
-                    )
+                # Convert events to dicts
+                event_dicts = [e.model_dump() for e in events]
+                events_covered = set()
 
-                    # Push each commentary to queue immediately
-                    # StateManager has already saved them via generate_commentary -> _save_commentaries
-                    for commentary in commentaries:
+                # Generate commentaries until all events are covered
+                while len(events_covered) < len(event_dicts):
+                    try:
+                        # Alternate between commentators
+                        speaker = "COMMENTATOR_1" if commentary_count % 2 == 0 else "COMMENTATOR_2"
+
+                        # Generate single 10-20s commentary covering multiple events
+                        # Pass all previous commentaries for conversational context
+                        commentary, newly_covered = await self.commentary_generator.generate_single_commentary(
+                            events=event_dicts,
+                            events_covered=events_covered,
+                            speaker=speaker,
+                            previous_commentaries=all_commentaries,
+                            previous_commentary_end=previous_commentary_end,
+                            video_duration=self.video_duration
+                        )
+
+                        # Update covered events
+                        events_covered.update(newly_covered)
+
+                        # Add to our list for future context
+                        all_commentaries.append(commentary)
+
+                        # Save to StateManager
+                        await self.state_manager.add_commentaries([commentary.model_dump()])
+
+                        # Push to queue immediately
                         await commentary_queue.put({
                             'commentary': commentary,
                             'interval_index': interval_index
                         })
 
-                        print(f"[STREAMING] Pushed commentary to queue: {commentary.start_time} - {commentary.end_time}")
+                        print(f"[STREAMING] Pushed commentary to queue: {commentary.start_time} - {commentary.end_time} ({speaker})")
 
                         # Emit SSE event for progress tracking
                         await sse_event_queue.put({
@@ -477,18 +502,28 @@ class StreamingPipeline:
                             'end': commentary.end_time
                         })
 
-                except Exception as e:
-                    print(f"[STREAMING] Commentary generation failed for interval {interval}: {e}")
-                    import traceback
-                    traceback.print_exc()
-                    # Continue with next interval even if this one fails
+                        # Update tracking variables
+                        previous_commentary_end = commentary.end_time
+                        commentary_count += 1
+
+                        # Safety check: if no events were covered, break to avoid infinite loop
+                        if not newly_covered:
+                            print(f"[STREAMING] Warning: No events covered in last commentary, moving to next interval")
+                            break
+
+                    except Exception as e:
+                        print(f"[STREAMING] Commentary generation failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        # Break out of the loop to avoid infinite retries on same events
+                        break
 
                 interval_index += 1
 
             # Signal completion
             await commentary_queue.put(None)
             await sse_event_queue.put(None)  # Signal SSE stream completion
-            print(f"[STREAMING] Commentary generation completed - all commentaries saved to StateManager")
+            print(f"[STREAMING] Commentary generation completed - {commentary_count} commentaries generated (one API call each, 10-20s duration, conversational flow)")
 
         except Exception as e:
             print(f"[STREAMING] Commentary generation error: {e}")
@@ -901,14 +936,9 @@ class StreamingPipeline:
                     if chunk_path.exists():
                         f.write(f"file '{chunk_path.absolute()}'\n")
 
-            # Output path
-            output_dir = videos_dir / 'generated-videos'
-            output_dir.mkdir(exist_ok=True, parents=True)
-
-            from datetime import datetime
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_filename = f"commentary_{timestamp}.mp4"
-            output_path = output_dir / output_filename
+            # Output path - save in session folder
+            output_filename = f"final_video.mp4"
+            output_path = streaming_dir / output_filename
 
             # Concatenate chunks
             cmd = [
@@ -932,7 +962,7 @@ class StreamingPipeline:
                 print(f"[STREAMING] Final video creation failed: {result.stderr}")
                 return ""
 
-            print(f"[STREAMING] Final video created: {output_filename}")
+            print(f"[STREAMING] Final video created: {output_path}")
             return output_filename
 
         except Exception as e:
