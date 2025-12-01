@@ -401,16 +401,19 @@ class CommentaryGenerator:
         events: List[dict],
         events_covered: set,
         speaker: str,
+        previous_commentaries: List[Commentary],
         previous_commentary_end: Optional[str],
         video_duration: float
     ) -> str:
         """
         Build prompt for generating a single commentary entry covering multiple events.
+        Includes previous commentaries for natural conversational flow.
 
         Args:
             events: All events from the interval
             events_covered: Set of event times already covered by previous commentaries
             speaker: "COMMENTATOR_1" or "COMMENTATOR_2"
+            previous_commentaries: List of all previous Commentary objects for context
             previous_commentary_end: End time of previous commentary (or None for first)
             video_duration: Total video duration in seconds
 
@@ -434,6 +437,21 @@ class CommentaryGenerator:
         prompt_parts.append("")
         prompt_parts.append(COMMENTARY_SYSTEM_CORE)
         prompt_parts.append("")
+
+        # Add previous commentaries for conversational context
+        if previous_commentaries:
+            prompt_parts.append("="*60)
+            prompt_parts.append("PREVIOUS COMMENTARY (for conversational context):")
+            prompt_parts.append("="*60)
+            for prev in previous_commentaries:
+                prompt_parts.append(f"[{prev.start_time} - {prev.end_time}] {prev.speaker}:")
+                prompt_parts.append(f'  "{prev.commentary}"')
+                prompt_parts.append("")
+            prompt_parts.append("="*60)
+            prompt_parts.append(f"You are now {speaker}. Respond naturally to continue the conversation.")
+            prompt_parts.append("Build on what was said, react to previous comments, and maintain dialogue flow.")
+            prompt_parts.append("="*60)
+            prompt_parts.append("")
 
         # Filter out already covered events
         remaining_events = [e for e in events if e.get('time') not in events_covered]
@@ -467,6 +485,9 @@ class CommentaryGenerator:
         prompt_parts.append("5. Covers the EARLIEST uncovered events from the list above")
         prompt_parts.append("6. Can reference multiple events if they occur close together in time")
         prompt_parts.append("7. Focuses on the most significant events in your time window")
+        if previous_commentaries:
+            prompt_parts.append("8. RESPONDS NATURALLY to what was previously said in the conversation")
+            prompt_parts.append("9. Maintains conversational flow and builds on previous comments")
         prompt_parts.append("")
         prompt_parts.append("CRITICAL: All timestamps MUST use integer seconds in HH:MM:SS format (e.g., 00:00:42, NOT 00:00:42.5)")
         prompt_parts.append("")
@@ -494,16 +515,19 @@ class CommentaryGenerator:
         events: List[dict],
         events_covered: set,
         speaker: str,
+        previous_commentaries: List[Commentary],
         previous_commentary_end: Optional[str],
         video_duration: float
     ) -> tuple[Commentary, set]:
         """
         Generate a single 10-20 second commentary entry covering multiple events with one API call.
+        Includes previous commentaries for natural conversational flow.
 
         Args:
             events: All events from the interval
             events_covered: Set of event times already covered
             speaker: "COMMENTATOR_1" or "COMMENTATOR_2"
+            previous_commentaries: List of all previous Commentary objects for conversational context
             previous_commentary_end: End time of previous commentary (or None for first)
             video_duration: Total video duration in seconds
 
@@ -515,10 +539,17 @@ class CommentaryGenerator:
             RuntimeError: If API call fails
         """
         remaining = len([e for e in events if e.get('time') not in events_covered])
-        print(f"[COMMENTARY] Generating single commentary as {speaker} ({remaining} events remaining)")
+        print(f"[COMMENTARY] Generating single commentary as {speaker} ({remaining} events remaining, {len(previous_commentaries)} previous commentaries for context)")
 
-        # Build prompt
-        prompt = self._build_single_commentary_prompt(events, events_covered, speaker, previous_commentary_end, video_duration)
+        # Build prompt with conversational context
+        prompt = self._build_single_commentary_prompt(
+            events,
+            events_covered,
+            speaker,
+            previous_commentaries,
+            previous_commentary_end,
+            video_duration
+        )
 
         try:
             # Call API with retry logic

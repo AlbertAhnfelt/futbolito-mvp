@@ -1,0 +1,46 @@
+{
+  "events": [
+    {
+      "time": "00:00:12",
+      "description": "Zlatan Ibrahimović (Player #10) receives a high pass just outside the penalty box, expertly cushioning the ball with his chest. As the ball drops, he executes an extraordinary overhead bicycle kick from approximately 25 yards out, sending the ball soaring in a high arc over the back-pedaling England goalkeeper into the top corner of the net. The score is updated to Sweden 4-2 England.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:15",
+      "description": "Following his sensational goal, Zlatan Ibrahimović (Player #10) jubilantly celebrates by taking off his jersey and running shirtless towards the crowd with arms outstretched. He is then quickly joined and congratulated by his ecstatic Swedish teammates on the field, sharing in the joy of the late goal.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:30",
+      "description": "Sweden players, including Zlatan Ibrahimović (10), Player #8, Player #16, and Sana (14), are seen celebrating on the field, with Ibrahimović shirtless after scoring a goal or at the conclusion of the match. The scoreboard prominently displays \"SWE 4 - 2 ENG\" at 90:00 minutes, plus additional time.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:38",
+      "description": "A brief, dynamic transition graphic appears on screen, displaying the iconic three lions crest of the England national football team set against a vibrant red background, typically used to introduce a highlight or a replay.",
+      "replay": false,
+      "intensity": 1
+    },
+    {
+      "time": "00:00:39",
+      "description": "A high-angle replay shows Zlatan Ibrahimović (10) receiving a long ball on the right side of the attacking half. He skillfully controls the pass, dribbles past an England defender in a white jersey, and then unleashes a powerful low shot from just outside the penalty box that evades the diving England goalkeeper, finding the bottom right corner of the net for a Swedish goal.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:49",
+      "description": "An iconic replay captures Zlatan Ibrahimović (10) scoring an incredible bicycle kick goal. Following a high defensive header by an England player, the England goalkeeper, Joe Hart (1), is far off his line. Ibrahimović audaciously launches an overhead kick from outside the penalty area, sending the ball in a high, looping arc over the stranded goalkeeper and defenders directly into the empty net, marking a truly spectacular and memorable goal.",
+      "replay": true,
+      "intensity": 10
+    },
+    {
+      "time": "00:01:04",
+      "description": "The goalkeeper, identified by jersey number 1, is seen diving to his right, lying on the ground near the left goalpost. The football is suspended in the air, just above the goalkeeper's head and near the crossbar, indicating a recent shot on goal or a deflection. Player #5 in a red jersey is positioned inside the penalty area, watching the ball, while Player #18, identified as Huddleston by his jersey, stands further out on the right flank. This suggests an immediate aftermath of an intense goal-mouth action, likely a crucial save or a missed scoring opportunity.",
+      "replay": false,
+      "intensity": 8
+    }
+  ]
+}

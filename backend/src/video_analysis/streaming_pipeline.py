@@ -422,7 +422,7 @@ class StreamingPipeline:
     ):
         """
         Stage 2: Generate 10-20 second commentaries with separate API calls.
-        Each commentary can cover multiple events.
+        Each commentary can cover multiple events and responds to previous commentaries.
 
         Args:
             event_queue: Input queue with detected events
@@ -430,11 +430,14 @@ class StreamingPipeline:
             sse_event_queue: Queue to push SSE progress events
         """
         try:
-            print(f"[STREAMING] Starting commentary generation (one API call per commentary, 10-20s each)...")
+            print(f"[STREAMING] Starting commentary generation (one API call per commentary, 10-20s each, conversational flow)...")
 
             interval_index = 0
             previous_commentary_end = None
             commentary_count = 0
+
+            # Track all generated commentaries for conversational context
+            all_commentaries = []
 
             while True:
                 event_batch = await event_queue.get()
@@ -464,16 +467,21 @@ class StreamingPipeline:
                         speaker = "COMMENTATOR_1" if commentary_count % 2 == 0 else "COMMENTATOR_2"
 
                         # Generate single 10-20s commentary covering multiple events
+                        # Pass all previous commentaries for conversational context
                         commentary, newly_covered = await self.commentary_generator.generate_single_commentary(
                             events=event_dicts,
                             events_covered=events_covered,
                             speaker=speaker,
+                            previous_commentaries=all_commentaries,
                             previous_commentary_end=previous_commentary_end,
                             video_duration=self.video_duration
                         )
 
                         # Update covered events
                         events_covered.update(newly_covered)
+
+                        # Add to our list for future context
+                        all_commentaries.append(commentary)
 
                         # Save to StateManager
                         await self.state_manager.add_commentaries([commentary.model_dump()])
@@ -515,7 +523,7 @@ class StreamingPipeline:
             # Signal completion
             await commentary_queue.put(None)
             await sse_event_queue.put(None)  # Signal SSE stream completion
-            print(f"[STREAMING] Commentary generation completed - {commentary_count} commentaries generated (one API call each, 10-20s duration)")
+            print(f"[STREAMING] Commentary generation completed - {commentary_count} commentaries generated (one API call each, 10-20s duration, conversational flow)")
 
         except Exception as e:
             print(f"[STREAMING] Commentary generation error: {e}")
