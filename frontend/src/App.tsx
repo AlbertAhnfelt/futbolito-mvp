@@ -378,7 +378,7 @@ function App() {
               description={
                 <div>
                   Commentary video has been generated and saved to:{' '}
-                  <Text code>{`videos/generated-videos/${generatedVideo}`}</Text>
+                  <Text code>{generatedVideo.replace('/videos/generated/', 'videos/generated-videos/')}</Text>
                 </div>
               }
               type="success"
@@ -387,12 +387,39 @@ function App() {
             />
           )}
 
-          {/* Video Player - Show during streaming or after completion */}
-          {(chunks.length > 0 || generatedVideo) && (
+          {/* Final Complete Video Player - Show after all processing is done */}
+          {generatedVideo && !analyzing && isComplete && (
             <Card
               title={
                 <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
-                  {isComplete ? 'Generated Commentary Video' : 'Live Streaming Commentary'}
+                  🎬 Final Complete Video
+                </Title>
+              }
+              style={{ borderRadius: 8, marginBottom: 24, border: '2px solid #6fbf8b' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <video
+                  controls
+                  style={{ width: '100%', maxWidth: '800px', borderRadius: 8 }}
+                  src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}${generatedVideo}`}
+                >
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+              <div style={{ marginTop: 16, textAlign: 'center' }}>
+                <Text type="secondary">
+                  Full concatenated video with all commentary segments
+                </Text>
+              </div>
+            </Card>
+          )}
+
+          {/* Video Player - Show during streaming (chunk-by-chunk playback) */}
+          {chunks.length > 0 && (
+            <Card
+              title={
+                <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
+                  {isComplete ? '📺 Chunk Playback (Individual Segments)' : '🔴 Live Streaming Commentary'}
                 </Title>
               }
               style={{ borderRadius: 8, marginBottom: 24 }}
@@ -419,14 +446,12 @@ function App() {
                   Your browser does not support the video tag.
                 </video>
               </div>
-              {chunks.length > 0 && (
-                <div style={{ marginTop: 16, textAlign: 'center' }}>
-                  <Text type="secondary">
-                    Chunk {currentChunkIndex + 1} of {chunks.length}
-                    {!isComplete && ' - Processing continues in background...'}
-                  </Text>
-                </div>
-              )}
+              <div style={{ marginTop: 16, textAlign: 'center' }}>
+                <Text type="secondary">
+                  Chunk {currentChunkIndex + 1} of {chunks.length}
+                  {!isComplete && ' - Processing continues in background...'}
+                </Text>
+              </div>
             </Card>
           )}
 
