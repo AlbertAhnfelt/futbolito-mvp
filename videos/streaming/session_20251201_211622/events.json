@@ -1,0 +1,160 @@
+{
+  "events": [
+    {
+      "time": "00:00:02",
+      "description": "A player in a dark blue/black jersey with number 10 receives the ball near the center circle in the attacking half, controlling it to initiate an offensive move.",
+      "replay": false,
+      "intensity": 4
+    },
+    {
+      "time": "00:00:05",
+      "description": "Player #10 skillfully dribbles several yards forward, drawing in multiple defenders, and then executes a precise ground pass towards Player #3 on the right wing, positioned just outside the penalty box.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:07",
+      "description": "Player #3 collects the ball on the right flank near the penalty area line and delivers a sharp, low cross into the crowded 18-yard box, aiming for an unmarked teammate.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:08",
+      "description": "A player in a dark blue/black jersey (#31) attempts a powerful shot on goal from a central position inside the penalty box, but a quick and effective block from a red-jersey defender deflects the ball.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:11",
+      "description": "Following the blocked shot, the rebound falls directly to Player #10 in the dark blue/black jersey, who swiftly strikes the ball with his right foot from inside the six-yard box, slotting it into the back of the net for a crucial goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:13",
+      "description": "Player #10, the goal scorer, runs towards the cheering crowd with both arms raised high, displaying an ecstatic smile as he celebrates his pivotal goal.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:16",
+      "description": "Player #13, identified as RAFINHA from his jersey name, enthusiastically joins Player #10, embracing him in a jubilant hug as more teammates gather to celebrate the goal.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:24",
+      "description": "The camera focuses on a section of the stadium filled with ecstatic fans, many dressed in red, standing and cheering loudly with their arms raised in collective celebration of the recent goal.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:28",
+      "description": "Multiple players from the dark blue/black team, including goal scorer Player #10, RAFINHA (#13), and Player #31, are seen in a tight, emotional embrace, celebrating the significant goal together.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:31",
+      "description": "Bayern Munich head coach Pep Guardiola stands with his arms crossed next to an assistant coach (possibly Toni Tapalović) who is observing the game intently with a hand over his mouth, showing a pensive expression from the technical area. Both are in suits and jackets.",
+      "replay": false,
+      "intensity": 3
+    },
+    {
+      "time": "00:00:35",
+      "description": "Bayern Munich players Bastian Schweinsteiger (#31) and David Alaba (#27) are seen celebrating intensely on the pitch, hugging Mario Mandžukić (#9) who is obscured. Other players are also seen joining the celebration, indicating a goal has just occurred or a significant positive event for the team.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:40",
+      "description": "Live action from a high angle shows a Bayern Munich player with the ball near the left side of the penalty area. He passes the ball into the box, where another Bayern player (#7, Franck Ribery) attempts a shot that is blocked by a Manchester United defender. The ball then deflects to Bayern player #10 (Arjen Robben).",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:49",
+      "description": "Replay shows Bayern player #10 (Arjen Robben) receiving the deflected ball inside the penalty box, taking a quick touch, and firing a low drive towards the near post. Manchester United goalkeeper #1 (David de Gea) dives to his left and makes a crucial save, parrying the ball away.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:52",
+      "description": "Another replay, from a closer perspective, highlights Bayern player #10 (Arjen Robben)'s left-footed shot from the right side of the penalty area. The ball travels low and hard, but Manchester United goalkeeper #1 (David de Gea) extends fully to palm it away, preventing a goal.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:56",
+      "description": "During a live shot of Manchester United player #31 (Marouane Fellaini) near the goal, an on-screen graphic appears with the German text 'Neuer Spielstand. Tor von FC Bayern.', officially announcing a new score and a goal for FC Bayern.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:01",
+      "description": "Player #31, wearing a dark blue and maroon jersey, scores a goal from extremely close range within the six-yard box, heading the ball powerfully into the top netting. The goalkeeper, wearing a bright green jersey with number 1, dives to his right in an attempt to save but is beaten. Player #4, in a red jersey, is also visible near the goal line, observing the play.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:01:03",
+      "description": "The video abruptly cuts from the live action replay of the goal to a black screen, indicating a scene transition.",
+      "replay": false,
+      "intensity": 1
+    },
+    {
+      "time": "00:01:05",
+      "description": "A highlight clip shows Cristiano Ronaldo, wearing a white Real Madrid jersey, enthusiastically celebrating a goal on a green pitch, pumping his fists in triumph. The text \"GREAT GOALS\" appears on screen.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:06",
+      "description": "A highlight clip features a player in a yellow jersey taking a powerful low shot from just outside the penalty box. The ball travels swiftly towards the bottom left corner of the goal as the goalkeeper dives.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:08",
+      "description": "A highlight clip displays a player in a yellow jersey executing a precise shot from distance, sending the ball curling into the top right corner of the net, over the outstretched arm of the diving goalkeeper.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:09",
+      "description": "A highlight clip focuses on a close-up of Ronaldinho, wearing a blue and red striped Barcelona jersey, initially looking thoughtful and then turning his gaze upwards. The text \"LEGENDARY PLAYERS\" starts to appear.",
+      "replay": true,
+      "intensity": 5
+    },
+    {
+      "time": "00:01:10",
+      "description": "A highlight clip captures a player performing an impressive acrobatic overhead kick inside the opponent's penalty area, making clean contact with the ball as it flies towards the goal.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:13",
+      "description": "A highlight clip provides a close-up view of a football striking the inside of the goalpost or crossbar with force, followed by a cut to a crowd of fans in yellow jerseys cheering and celebrating.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:15",
+      "description": "A highlight clip features a player in a dark jersey taking a powerful long-range shot from outside the penalty area, aiming towards the goal.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:16",
+      "description": "A highlight clip shows a player in a white jersey scoring a goal with a low, driven shot from inside the penalty box, sending the ball past the diving goalkeeper into the bottom right corner of the net.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:17",
+      "description": "A highlight clip depicts a player in a white jersey attempting a header on goal, rising above a defender to make contact with an airborne ball inside the penalty area.",
+      "replay": true,
+      "intensity": 6
+    }
+  ]
+}
