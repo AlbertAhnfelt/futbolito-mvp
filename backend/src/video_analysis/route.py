@@ -41,8 +41,8 @@ async def get_videos_list():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/analyze-stream/{filename}")
-async def analyze_video_stream(filename: str):
+@router.get("/analyze-stream/{language}/{filename}")
+async def analyze_video_stream(filename: str, language : str):
     """
     Stream video generation progress via Server-Sent Events (SSE).
 
@@ -54,13 +54,14 @@ async def analyze_video_stream(filename: str):
     - complete: All processing finished
     - error: Processing error occurred
     """
+    print(language)
     try:
         if not filename:
             raise HTTPException(status_code=400, detail="No filename provided")
 
         async def event_generator():
             try:
-                async for event in streaming_pipeline(filename):
+                async for event in streaming_pipeline(filename,language):
                     # Format as SSE event
                     yield f"data: {json.dumps(event)}\n\n"
             except Exception as e:

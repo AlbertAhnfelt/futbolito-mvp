@@ -33,8 +33,8 @@ export const videoApi = {
    * Analyze a video with real-time streaming (STREAMING MODE - recommended)
    * Returns an EventSource for Server-Sent Events
    */
-  analyzeVideoStream: (filename: string): EventSource => {
-    const url = `${API_BASE_URL}/analyze-stream/${encodeURIComponent(filename)}`;
+  analyzeVideoStream: (filename: string, language : string): EventSource => {
+    const url = `${API_BASE_URL}/analyze-stream/${language}/${encodeURIComponent(filename)}`;
     return new EventSource(url);
   },
 

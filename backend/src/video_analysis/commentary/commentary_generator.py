@@ -32,7 +32,7 @@ class CommentaryGenerator:
     timing, gaps, and word limits.
     """
 
-    def __init__(self, api_key: str, state_manager=None, output_dir: Optional[Path] = None):
+    def __init__(self, api_key: str,language : str, state_manager=None, output_dir: Optional[Path] = None):
         """
         Initialize commentary generator.
 
@@ -43,7 +43,7 @@ class CommentaryGenerator:
         """
         self.client = genai.Client(api_key=api_key)
         self.context_manager = get_context_manager()
-
+        self.language = language
         # StateManager is the PRIMARY state management system
         self.state_manager = state_manager
 
@@ -138,7 +138,14 @@ class CommentaryGenerator:
         Returns:
             str: The response text from Gemini
         """
-        print("[COMMENTARY] Calling Gemini API for dual-commentator generation...")
+
+        language_selection = {"English" : "Answer in English",
+                              "French" : "### FAIT ATTENTION A LA LANGUE, Réponds uniquement en Français, dans la langue de Molière. La réponse doit etre en français",
+                              "Spanish" : "Responder solo en español",
+                              "Korean": "### 언어에 주의하세요. 한국어로만 답변하세요. 답변은 반드시 한국어로 작성해야 합니다.",
+                              "Swedish":"### VAR OBSERVANT PÅ SPRÅKET, Svara endast på svenska. Svaret måste vara på svenska",}
+        prompt = prompt + language_selection[self.language]  # "Réponds uniquement en Français, dans la langue de Molière"
+        print(f"[COMMENTARY] Calling Gemini API for dual-commentator generation, answering in {self.language}")
         response = self.client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
