@@ -207,120 +207,58 @@ class StreamingPipeline:
                     'progress': progress
                 }
 
-            yield {
-                'type': 'status',
-                'message': f'All segments ready for analysis ({self.video_duration:.1f}s)',
-                'progress': 25
-            }
-
-            # Step 4: Create async queues
-            event_queue = asyncio.Queue()
-            commentary_queue = asyncio.Queue()
-            audio_queue = asyncio.Queue()
-            chunk_queue = asyncio.Queue()
-            sse_event_queue = asyncio.Queue()  # For progress events from all stages
-
-            # Step 5: Launch pipeline stages concurrently
-            print(f"\n[STREAMING] Starting pipeline stages...")
-
-            # Create tasks for all pipeline stages
-            tasks = [
-                asyncio.create_task(
-                    self._detect_events_streaming(event_queue, sse_event_queue)
-                ),
-                asyncio.create_task(
-                    self._generate_commentary_streaming(event_queue, commentary_queue, sse_event_queue)
-                ),
-                asyncio.create_task(
-                    self._generate_audio_parallel(commentary_queue, audio_queue)
-                ),
-                asyncio.create_task(
-                    self._create_video_chunks(audio_queue, chunk_queue, video_path_with_audio)
-                ),
-            ]
-
-            # Step 6: Consume events from both chunk_queue and sse_event_queue
+            # Step 4: Process each segment sequentially (TRUE STREAMING)
+            # Each segment goes through: upload → events → commentary → TTS → chunk → EMIT
+            # User can start watching as soon as first segment is ready
+            
+            print(f"\n{'='*60}")
+            print(f"[TRUE STREAMING] Processing {len(self.clips)} segments sequentially")
+            print(f"{'='*60}\n")
+            
+            streaming_dir = videos_dir / 'streaming' / self.session_id
+            streaming_dir.mkdir(exist_ok=True, parents=True)
+            
             chunk_index = 0
-            total_chunks_expected = self._estimate_chunks()
-            chunks_complete = False
-            events_complete = False
+            total_segments = len(self.clips)
+            
+            for i, (clip, file_uri) in enumerate(zip(self.clips, self.clip_file_uris)):
+                # Update progress
+                progress = 25 + int((i / total_segments) * 70)
+                yield {
+                    'type': 'status',
+                    'message': f'Processing segment {i + 1}/{total_segments}...',
+                    'progress': progress
+                }
+                
+                # Process this segment completely and get chunk data
+                chunk_data = await self._process_segment_and_emit(
+                    clip=clip,
+                    file_uri=file_uri,
+                    segment_index=i,
+                    total_segments=total_segments,
+                    video_path_with_audio=video_path_with_audio,
+                    streaming_dir=streaming_dir
+                )
+                
+                # EMIT chunk immediately so frontend can start playing
+                if chunk_data:
+                    yield {
+                        'type': 'chunk_ready',
+                        'index': chunk_data['index'],
+                        'url': chunk_data['url'],
+                        'start_time': chunk_data['start_time'],
+                        'end_time': chunk_data['end_time'],
+                        'progress': progress
+                    }
+                    chunk_index += 1
+                    print(f"[TRUE STREAMING] ✓ Segment {i + 1} EMITTED - user can watch now!")
+            
+            # Clean up temporary clip files
+            print(f"\n[STREAMING] Cleaning up temporary clips...")
+            splitter = VideoSplitter(ffmpeg_exe=self.video_processor.ffmpeg_exe)
+            await asyncio.to_thread(splitter.cleanup_clips, self.clips)
 
-            # Create pending tasks for getting from both queues
-            pending_tasks = set()
-            chunk_task = asyncio.create_task(chunk_queue.get())
-            sse_task = asyncio.create_task(sse_event_queue.get())
-            pending_tasks.add(chunk_task)
-            pending_tasks.add(sse_task)
-
-            while not (chunks_complete and events_complete):
-                try:
-                    # Wait for whichever event comes first
-                    done, pending = await asyncio.wait(
-                        pending_tasks,
-                        return_when=asyncio.FIRST_COMPLETED,
-                        timeout=120.0
-                    )
-
-                    pending_tasks = pending
-
-                    for task in done:
-                        if task == chunk_task:
-                            chunk_data = task.result()
-
-                            if chunk_data is None:
-                                # All chunks processed
-                                print(f"[STREAMING] All chunks received (total: {chunk_index})")
-                                chunks_complete = True
-                            else:
-                                # Calculate progress
-                                progress = 15 + int((chunk_index / max(total_chunks_expected, 1)) * 80)
-
-                                # Emit chunk ready event
-                                yield {
-                                    'type': 'chunk_ready',
-                                    'index': chunk_data['index'],
-                                    'url': chunk_data['url'],
-                                    'start_time': chunk_data['start_time'],
-                                    'end_time': chunk_data['end_time'],
-                                    'progress': min(progress, 95)
-                                }
-
-                                chunk_index += 1
-
-                            # Create new task for next chunk (unless complete)
-                            if not chunks_complete:
-                                chunk_task = asyncio.create_task(chunk_queue.get())
-                                pending_tasks.add(chunk_task)
-
-                        elif task == sse_task:
-                            sse_event = task.result()
-
-                            if sse_event is None:
-                                # No more SSE events
-                                print(f"[STREAMING] SSE event stream complete")
-                                events_complete = True
-                            else:
-                                # Emit progress event
-                                yield sse_event
-
-                            # Create new task for next SSE event (unless complete)
-                            if not events_complete:
-                                sse_task = asyncio.create_task(sse_event_queue.get())
-                                pending_tasks.add(sse_task)
-
-                except asyncio.TimeoutError:
-                    print(f"[STREAMING] Timeout waiting for events")
-                    # Check if tasks are still running
-                    if all(task.done() for task in tasks):
-                        print(f"[STREAMING] All tasks completed, ending stream")
-                        break
-                    # Otherwise continue waiting
-                    continue
-
-            # Wait for all tasks to complete
-            await asyncio.gather(*tasks, return_exceptions=True)
-
-            # Step 6: Create final concatenated video (background)
+            # Step 5: Create final concatenated video
             yield {
                 'type': 'status',
                 'message': 'Finalizing video...',
@@ -617,105 +555,134 @@ class StreamingPipeline:
         video_path: Path
     ):
         """
-        Stage 4: Create continuous video chunks with no gaps.
+        Stage 4: Create video chunks with TRUE STREAMING - emit as soon as ready.
 
-        Each chunk spans from the previous chunk's end to the current commentary's end_time,
-        ensuring full video coverage:
-        - Chunk 0: [0, commentary_1.end_time] with commentary_1 overlaid
-        - Chunk 1: [commentary_1.end_time, commentary_2.end_time] with commentary_2 overlaid
-        - Chunk N: [commentary_N-1.end_time, commentary_N.end_time] with commentary_N overlaid
-        - Final: [last_end_time, video_duration] with no commentary
-
-        Note: Collects all commentaries first and sorts by start_time to ensure
-        chronological chunk creation, even when TTS completes out of order.
+        Uses a buffered streaming approach:
+        - Buffer incoming audio (arrives out of order due to parallel TTS)
+        - Emit chunks in chronological order as soon as they can be created
+        - Don't wait for ALL audio - emit incrementally for real-time playback
 
         Args:
             audio_queue: Input queue with audio data
             chunk_queue: Output queue for video chunks
             video_path: Path to original video
         """
+        import heapq
+        
         try:
-            print(f"[STREAMING] Starting video chunk creation...")
+            print(f"[STREAMING] Starting video chunk creation (TRUE STREAMING MODE)...")
 
             # Create output directory for chunks
             videos_dir = Path(__file__).parent.parent.parent.parent / 'videos'
             streaming_dir = videos_dir / 'streaming' / self.session_id
             streaming_dir.mkdir(exist_ok=True, parents=True)
 
-            # Stage 1: Collect all commentaries from the parallel TTS queue
-            # (they arrive in completion order, not chronological order)
-            commentaries = []
-            while True:
-                audio_data = await audio_queue.get()
-                if audio_data is None:
-                    break
-                commentaries.append(audio_data)
-
-            print(f"[STREAMING] Collected {len(commentaries)} commentaries, sorting chronologically...")
-
-            # Stage 2: Sort by start_time to ensure correct chunk boundaries
-            # This is critical because parallel TTS completes out of order
-            commentaries.sort(key=lambda x: parse_time_to_seconds(x['commentary'].start_time))
-
-            # Stage 3: Create chunks in chronological order
+            # Buffer for out-of-order audio arrivals
+            # Using a min-heap sorted by start_time for efficient retrieval
+            audio_buffer = []  # heap of (start_time, audio_data)
+            
             chunk_index = 0
             chunk_start = 0.0  # First chunk always starts at video beginning
+            audio_complete = False
+            total_emitted = 0
 
-            for audio_data in commentaries:
+            async def try_emit_next_chunk():
+                """Try to emit the next chunk if we have the audio for it."""
+                nonlocal chunk_index, chunk_start, total_emitted
+                
+                if not audio_buffer:
+                    return False
+                
+                # Peek at the earliest audio in buffer
+                earliest_start, audio_data = audio_buffer[0]
                 commentary = audio_data['commentary']
                 audio_base64 = audio_data['audio_base64']
-
-                # Chunk ends at this commentary's end_time
                 chunk_end = parse_time_to_seconds(commentary.end_time)
+                
+                # Check if this audio is for our current chunk position
+                # Allow some tolerance for timing
+                if earliest_start <= chunk_start + 5.0:  # 5 second tolerance
+                    # Pop from buffer
+                    heapq.heappop(audio_buffer)
+                    
+                    # Validate chunk duration
+                    chunk_duration = chunk_end - chunk_start
+                    if chunk_duration < 0.1:
+                        print(f"[STREAMING] Skipping chunk {chunk_index}: duration too small ({chunk_duration:.2f}s)")
+                        return True  # Continue trying
+                    
+                    # Clamp chunk_end to video duration
+                    if chunk_end > self.video_duration:
+                        chunk_end = self.video_duration
+                    
+                    print(f"[STREAMING] Creating chunk {chunk_index}: {seconds_to_time(chunk_start)} - {seconds_to_time(chunk_end)} (STREAMING)")
+                    
+                    try:
+                        chunk_path = await asyncio.to_thread(
+                            self._create_single_chunk,
+                            video_path,
+                            chunk_start,
+                            chunk_end,
+                            commentary,
+                            audio_base64,
+                            chunk_index,
+                            streaming_dir
+                        )
+                        
+                        chunk_url = f"/videos/streaming/{self.session_id}/chunk_{chunk_index}.mp4"
+                        
+                        await chunk_queue.put({
+                            'path': chunk_path,
+                            'url': chunk_url,
+                            'index': chunk_index,
+                            'start_time': seconds_to_time(chunk_start),
+                            'end_time': seconds_to_time(chunk_end)
+                        })
+                        
+                        print(f"[STREAMING] ✓ Chunk {chunk_index} EMITTED: {chunk_url}")
+                        total_emitted += 1
+                        
+                        chunk_start = chunk_end
+                        chunk_index += 1
+                        return True
+                        
+                    except Exception as e:
+                        print(f"[STREAMING] Chunk creation failed for index {chunk_index}: {e}")
+                        print(traceback.format_exc())
+                        return True  # Continue trying with next
+                
+                return False
 
-                # Validate chunk duration (skip if too small or zero)
-                chunk_duration = chunk_end - chunk_start
-                if chunk_duration < 0.1:
-                    print(f"[STREAMING] Skipping chunk {chunk_index}: duration too small ({chunk_duration:.2f}s)")
-                    continue
-
-                print(f"[STREAMING] Creating chunk {chunk_index}: {seconds_to_time(chunk_start)} - {seconds_to_time(chunk_end)}")
-
+            # Main streaming loop - process audio as it arrives
+            while not audio_complete or audio_buffer:
+                # Try to emit any chunks we can with current buffer
+                while await try_emit_next_chunk():
+                    pass
+                
+                if audio_complete and not audio_buffer:
+                    break
+                
+                # Wait for next audio with timeout
                 try:
-                    # Create chunk from chunk_start to chunk_end
-                    # Commentary will be overlaid at its specific time within the chunk
-                    chunk_path = await asyncio.to_thread(
-                        self._create_single_chunk,
-                        video_path,
-                        chunk_start,
-                        chunk_end,
-                        commentary,
-                        audio_base64,
-                        chunk_index,
-                        streaming_dir
-                    )
-
-                    # Generate URL for frontend
-                    chunk_url = f"/videos/streaming/{self.session_id}/chunk_{chunk_index}.mp4"
-
-                    await chunk_queue.put({
-                        'path': chunk_path,
-                        'url': chunk_url,
-                        'index': chunk_index,
-                        'start_time': seconds_to_time(chunk_start),
-                        'end_time': seconds_to_time(chunk_end)
-                    })
-
-                    print(f"[STREAMING] Chunk {chunk_index} ready: {chunk_url}")
-
-                    # Next chunk starts where this one ended
-                    chunk_start = chunk_end
-                    chunk_index += 1
-
-                except Exception as e:
-                    print(f"[STREAMING] Chunk creation failed for index {chunk_index}: {e}")
-                    print(traceback.format_exc())
-                    # Continue with next chunk even if this one fails
+                    audio_data = await asyncio.wait_for(audio_queue.get(), timeout=1.0)
+                    
+                    if audio_data is None:
+                        print(f"[STREAMING] Audio queue complete, {len(audio_buffer)} items in buffer")
+                        audio_complete = True
+                    else:
+                        # Add to buffer sorted by start_time
+                        commentary = audio_data['commentary']
+                        start_time = parse_time_to_seconds(commentary.start_time)
+                        heapq.heappush(audio_buffer, (start_time, audio_data))
+                        print(f"[STREAMING] Buffered audio for {commentary.start_time} (buffer size: {len(audio_buffer)})")
+                        
+                except asyncio.TimeoutError:
+                    # Timeout - just try to emit again
                     continue
 
-            # Stage 4: Create final chunk from last commentary end to video end
+            # Create final chunk from last commentary end to video end
             final_chunk_duration = self.video_duration - chunk_start
-            if chunk_start <= self.video_duration and final_chunk_duration >= 0.1:
+            if chunk_start < self.video_duration and final_chunk_duration >= 0.1:
                 print(f"[STREAMING] Creating final chunk {chunk_index}: {seconds_to_time(chunk_start)} - {seconds_to_time(self.video_duration)}")
 
                 try:
@@ -724,8 +691,8 @@ class StreamingPipeline:
                         video_path,
                         chunk_start,
                         self.video_duration,
-                        None,  # No commentary for final chunk
-                        None,  # No audio
+                        None,
+                        None,
                         chunk_index,
                         streaming_dir
                     )
@@ -740,7 +707,7 @@ class StreamingPipeline:
                         'end_time': seconds_to_time(self.video_duration)
                     })
 
-                    print(f"[STREAMING] Final chunk {chunk_index} ready")
+                    print(f"[STREAMING] ✓ Final chunk {chunk_index} EMITTED")
                     chunk_index += 1
 
                 except Exception as e:
@@ -749,7 +716,7 @@ class StreamingPipeline:
 
             # Signal completion
             await chunk_queue.put(None)
-            print(f"[STREAMING] Video chunk creation completed ({chunk_index} chunks)")
+            print(f"[STREAMING] Video chunk creation completed ({chunk_index} chunks emitted)")
 
         except Exception as e:
             print(f"[STREAMING] Chunk creation error: {e}")
@@ -872,6 +839,140 @@ class StreamingPipeline:
 
         return chunk_path
 
+    def _create_single_chunk_multi_audio(
+        self,
+        video_path: Path,
+        chunk_start: float,
+        chunk_end: float,
+        audio_data_list: list,
+        chunk_index: int,
+        output_dir: Path
+    ) -> Path:
+        """
+        Create a single video chunk with MULTIPLE audio overlays.
+        
+        Each commentary audio is overlaid at its correct timestamp using
+        FFmpeg's filter_complex to mix all audio streams together.
+        
+        This is a SYNCHRONOUS method that will be run in a thread.
+        
+        Args:
+            video_path: Path to original video
+            chunk_start: Start time in seconds (relative to original video)
+            chunk_end: End time in seconds (relative to original video)
+            audio_data_list: List of {'commentary': obj, 'audio_base64': str}
+            chunk_index: Index of this chunk
+            output_dir: Directory to save chunk
+            
+        Returns:
+            Path to created chunk file
+        """
+        import base64
+        import subprocess
+        import tempfile
+        
+        chunk_filename = f"chunk_{chunk_index}.mp4"
+        chunk_path = output_dir / chunk_filename
+        
+        if not audio_data_list:
+            # No commentary - just create video segment
+            print(f"[CHUNK {chunk_index}] No audio overlays, creating video-only chunk")
+            cmd = [
+                self.video_processor.ffmpeg_exe, '-y',
+                '-ss', str(chunk_start),
+                '-to', str(chunk_end),
+                '-i', str(video_path),
+                '-c:v', 'libx264',
+                '-preset', 'ultrafast',
+                '-c:a', 'aac',
+                '-ar', '44100',
+                '-b:a', '192k',
+                '-movflags', '+faststart',
+                str(chunk_path)
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            if result.returncode != 0:
+                raise RuntimeError(f"FFmpeg failed: {result.stderr}")
+            return chunk_path
+        
+        # Create chunk with multiple audio overlays
+        print(f"[CHUNK {chunk_index}] Creating chunk with {len(audio_data_list)} audio overlays")
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            
+            # Save all audio files to temp directory
+            audio_files = []
+            delays_ms = []
+            
+            for i, audio_data in enumerate(audio_data_list):
+                commentary = audio_data['commentary']
+                audio_base64 = audio_data['audio_base64']
+                
+                # Save audio file
+                audio_file = temp_path / f"commentary_{i}.mp3"
+                audio_bytes = base64.b64decode(audio_base64)
+                audio_file.write_bytes(audio_bytes)
+                audio_files.append(audio_file)
+                
+                # Calculate delay relative to chunk start
+                commentary_start = parse_time_to_seconds(commentary.start_time)
+                delay_from_chunk_start = commentary_start - chunk_start
+                delay_ms = max(0, int(delay_from_chunk_start * 1000))  # Ensure non-negative
+                delays_ms.append(delay_ms)
+                
+                print(f"[CHUNK {chunk_index}] Audio {i}: {commentary.start_time} -> delay={delay_ms}ms")
+            
+            # Build FFmpeg command with filter_complex for multiple audios
+            # Input: video + all audio files
+            cmd = [self.video_processor.ffmpeg_exe, '-y']
+            cmd.extend(['-ss', str(chunk_start), '-to', str(chunk_end)])
+            cmd.extend(['-i', str(video_path)])
+            
+            for audio_file in audio_files:
+                cmd.extend(['-i', str(audio_file)])
+            
+            # Build filter_complex string
+            # [0:a] is original audio, [1:a], [2:a], etc are commentary audios
+            filter_parts = ['[0:a]volume=0.2[orig]']
+            mix_inputs = ['[orig]']
+            
+            for i in range(len(audio_files)):
+                delay = delays_ms[i]
+                filter_parts.append(f'[{i+1}:a]adelay={delay}|{delay}[c{i}]')
+                mix_inputs.append(f'[c{i}]')
+            
+            # Mix all inputs together
+            mix_input_str = ''.join(mix_inputs)
+            num_inputs = len(audio_files) + 1  # original + all commentaries
+            filter_parts.append(f'{mix_input_str}amix=inputs={num_inputs}:duration=first[aout]')
+            
+            filter_complex = ';'.join(filter_parts)
+            
+            cmd.extend([
+                '-filter_complex', filter_complex,
+                '-map', '0:v',
+                '-map', '[aout]',
+                '-c:v', 'libx264',
+                '-preset', 'ultrafast',
+                '-c:a', 'aac',
+                '-ar', '44100',
+                '-b:a', '192k',
+                '-movflags', '+faststart',
+                str(chunk_path)
+            ])
+            
+            print(f"[CHUNK {chunk_index}] Running FFmpeg with {len(audio_files)} audio tracks...")
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            
+            if result.returncode != 0:
+                print(f"[CHUNK {chunk_index}] FFmpeg error: {result.stderr}")
+                raise RuntimeError(f"FFmpeg failed: {result.stderr}")
+        
+        print(f"[CHUNK {chunk_index}] Successfully created with {len(audio_files)} overlays")
+        return chunk_path
+
     async def _create_final_video(self, chunk_count: int) -> str:
         """
         Create final concatenated video from all chunks.
@@ -938,6 +1039,144 @@ class StreamingPipeline:
         except Exception as e:
             print(f"[STREAMING] Error creating final video: {e}")
             return ""
+
+    async def _process_segment_and_emit(
+        self,
+        clip: VideoClip,
+        file_uri: str,
+        segment_index: int,
+        total_segments: int,
+        video_path_with_audio: Path,
+        streaming_dir: Path
+    ) -> Dict[str, Any]:
+        """
+        Process ONE segment completely through the entire pipeline and return chunk data.
+        
+        This enables TRUE STREAMING: each segment is fully processed and emitted
+        before starting the next, so users can watch while processing continues.
+        
+        Pipeline for this segment:
+        1. Detect events
+        2. Generate commentary
+        3. Generate TTS audio
+        4. Create video chunk with audio overlay
+        5. Return chunk data for immediate emission
+        
+        Args:
+            clip: The video clip to process
+            file_uri: Gemini file URI for this clip
+            segment_index: Index of this segment (0-based)
+            total_segments: Total number of segments
+            video_path_with_audio: Path to full video with audio
+            streaming_dir: Directory to save chunks
+            
+        Returns:
+            Chunk data dict with path, url, index, start_time, end_time
+        """
+        print(f"\n{'='*60}")
+        print(f"[SEGMENT {segment_index + 1}/{total_segments}] Processing {seconds_to_time(clip.start_time)} - {seconds_to_time(clip.end_time)}")
+        print(f"{'='*60}")
+        
+        # Step 1: Detect events for this segment
+        print(f"[SEGMENT {segment_index + 1}] Detecting events...")
+        events = await asyncio.to_thread(
+            self.event_detector.detect_events_for_interval,
+            file_uri=file_uri,
+            interval_start=clip.start_time,
+            interval_end=clip.end_time
+        )
+        await self.event_detector._update_state(events, clip.end_time)
+        print(f"[SEGMENT {segment_index + 1}] Detected {len(events)} events")
+        
+        # Step 2: Generate commentary for these events
+        if not events:
+            print(f"[SEGMENT {segment_index + 1}] No events, creating chunk without commentary")
+            commentaries = []
+        else:
+            print(f"[SEGMENT {segment_index + 1}] Generating commentary...")
+            try:
+                commentaries = await self.commentary_generator.generate_commentary(
+                    events=[e.model_dump() for e in events],
+                    video_duration=self.video_duration,
+                    use_streaming=False
+                )
+                print(f"[SEGMENT {segment_index + 1}] Generated {len(commentaries)} commentary segments")
+            except Exception as e:
+                print(f"[SEGMENT {segment_index + 1}] Commentary generation failed: {e}")
+                commentaries = []
+        
+        # Step 3: Generate TTS for all commentaries in this segment
+        audio_data_list = []
+        if commentaries and self.tts_generator:
+            print(f"[SEGMENT {segment_index + 1}] Generating TTS audio...")
+            for commentary in commentaries:
+                try:
+                    audio_base64 = await asyncio.to_thread(
+                        self.tts_generator.generate_audio,
+                        commentary.commentary,
+                        getattr(commentary, 'speaker', None)
+                    )
+                    audio_data_list.append({
+                        'commentary': commentary,
+                        'audio_base64': audio_base64
+                    })
+                    print(f"[SEGMENT {segment_index + 1}] TTS completed for {commentary.start_time}")
+                except Exception as e:
+                    print(f"[SEGMENT {segment_index + 1}] TTS failed: {e}")
+                    audio_data_list.append({
+                        'commentary': commentary,
+                        'audio_base64': None
+                    })
+        
+        # Step 4: Create video chunk for this segment
+        chunk_start = clip.start_time
+        chunk_end = clip.end_time
+        
+        # Filter commentaries to only those within THIS segment's time range
+        # This is critical - commentaries may have timestamps outside segment boundaries
+        segment_audio_list = []
+        if audio_data_list:
+            for audio_data in audio_data_list:
+                if audio_data['audio_base64']:
+                    commentary_start = parse_time_to_seconds(audio_data['commentary'].start_time)
+                    # Include commentary if it starts within this segment
+                    if chunk_start <= commentary_start < chunk_end:
+                        segment_audio_list.append(audio_data)
+                        print(f"[SEGMENT {segment_index + 1}] Including commentary at {audio_data['commentary'].start_time}")
+                    else:
+                        print(f"[SEGMENT {segment_index + 1}] Skipping commentary at {audio_data['commentary'].start_time} (outside segment {chunk_start}-{chunk_end})")
+            
+            # Sort by start time for proper overlay order
+            segment_audio_list.sort(key=lambda x: parse_time_to_seconds(x['commentary'].start_time))
+        
+        print(f"[SEGMENT {segment_index + 1}] Creating video chunk with {len(segment_audio_list)} audio overlays...")
+        try:
+            chunk_path = await asyncio.to_thread(
+                self._create_single_chunk_multi_audio,
+                video_path_with_audio,
+                chunk_start,
+                chunk_end,
+                segment_audio_list,  # Pass ALL filtered audios
+                segment_index,
+                streaming_dir
+            )
+            
+            chunk_url = f"/videos/streaming/{self.session_id}/chunk_{segment_index}.mp4"
+            
+            print(f"[SEGMENT {segment_index + 1}] ✓ CHUNK READY: {chunk_url}")
+            
+            return {
+                'path': chunk_path,
+                'url': chunk_url,
+                'index': segment_index,
+                'start_time': seconds_to_time(chunk_start),
+                'end_time': seconds_to_time(chunk_end)
+            }
+            
+        except Exception as e:
+            print(f"[SEGMENT {segment_index + 1}] Chunk creation failed: {e}")
+            traceback.print_exc()
+            return None
 
     def _estimate_chunks(self) -> int:
         """Estimate number of chunks based on video duration."""
