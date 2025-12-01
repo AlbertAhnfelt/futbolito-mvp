@@ -12,7 +12,8 @@ router = APIRouter()
 
 class AnalyzeRequest(BaseModel):
     filename: str
-    language: str = "en"  # ✅ changed: add language field with default "en"
+    language: str = "en"  # Language field with default "en"
+    use_graph_llm: bool = False  # Graph LLM toggle (default: False)
 
 
 @router.get("/videos/list")
@@ -32,8 +33,12 @@ async def analyze_video_endpoint(request: AnalyzeRequest):
         if not request.filename:
             raise HTTPException(status_code=400, detail="No filename provided")
 
-        # ✅ changed: pass language through to the controller
-        highlights = await analyze_video(request.filename, request.language)
+        # Pass language and graph LLM toggle to the controller
+        highlights = await analyze_video(
+            filename=request.filename,
+            language=request.language,
+            use_graph_llm=request.use_graph_llm
+        )
         return JSONResponse(content=highlights)
 
     except FileNotFoundError as e:
@@ -43,7 +48,7 @@ async def analyze_video_endpoint(request: AnalyzeRequest):
 
 
 @router.get("/analyze-stream/{filename}")
-async def analyze_video_stream(filename: str):
+async def analyze_video_stream(filename: str, use_graph_llm: bool = False):
     """
     Stream video generation progress via Server-Sent Events (SSE).
 
@@ -54,6 +59,10 @@ async def analyze_video_stream(filename: str):
     - chunk_ready: New video chunk available for playback
     - complete: All processing finished
     - error: Processing error occurred
+    
+    Args:
+        filename: Video filename
+        use_graph_llm: Use graph-based commentary generation (query parameter)
     """
     try:
         if not filename:
@@ -61,7 +70,7 @@ async def analyze_video_stream(filename: str):
 
         async def event_generator():
             try:
-                async for event in streaming_pipeline(filename):
+                async for event in streaming_pipeline(filename, use_graph_llm):
                     # Format as SSE event
                     yield f"data: {json.dumps(event)}\n\n"
             except Exception as e:
@@ -185,3 +194,4 @@ async def get_events():
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+

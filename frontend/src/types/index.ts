@@ -13,6 +13,8 @@ export interface AnalyzeResponse {
 
 export interface AnalyzeRequest {
   filename: string;
+  language?: string;
+  use_graph_llm?: boolean;
 }
 
 export interface ApiError {

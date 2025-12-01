@@ -85,18 +85,27 @@ def list_videos():
     return video_files
 
 
-async def analyze_video(filename: str, language: str = "en"):
+async def analyze_video(filename: str, language: str = "en", use_graph_llm: bool = False):
     """
     Analyze a video file using the new two-process pipeline:
     1. Event detection (30-second intervals)
-    2. Commentary generation (from detected events)
+    2. Commentary generation (from detected events) - with optional graph LLM
     3. (Optional) Translation of commentary (en/fr/es)
     4. TTS audio generation
     5. Video generation with commentary overlay (exact timing)
+    
+    Args:
+        filename: Video filename
+        language: Target language (en/fr/es)
+        use_graph_llm: Use graph-based commentary generation (intensity-aware)
     """
     try:
         print(f"\n{'='*60}")
-        print(f"🎬 VIDEO ANALYSIS PIPELINE - NEW SYSTEM")
+        print(f"🎬 VIDEO ANALYSIS PIPELINE")
+        if use_graph_llm:
+            print(f"🧠 Graph LLM: ENABLED (Intensity-aware commentary)")
+        else:
+            print(f"📝 Graph LLM: DISABLED (Standard commentary)")
         print(f"{'='*60}\n")
 
         # Normalize target language
@@ -106,16 +115,16 @@ async def analyze_video(filename: str, language: str = "en"):
         # Initialize Gemini client
         if not GEMINI_API_KEY:
             raise ValueError("GEMINI_API_KEY not found in environment variables")
-
+        
         client = genai.Client(api_key=GEMINI_API_KEY)
-
+        
         # Get video path
         videos_dir = Path(__file__).parent.parent.parent.parent / 'videos'
         video_path = videos_dir / filename
-
+        
         if not video_path.exists():
             raise FileNotFoundError(f"Video file {filename} not found")
-
+        
         # Initialize video processor
         video_processor = VideoProcessor()
 
@@ -125,35 +134,35 @@ async def analyze_video(filename: str, language: str = "en"):
 
         # Get video duration
         video_duration = video_processor.get_video_duration(video_path_with_audio)
-
+        
         # Upload video to Gemini File API
         print(f"\nStep 2: Uploading video to Gemini...")
         print(f"Video: {video_path_with_audio}")
         uploaded_file = client.files.upload(file=str(video_path_with_audio))
         file_name = uploaded_file.name
-
+        
         # Wait for file to be processed and become ACTIVE
         print(f"Uploaded file: {file_name}")
         print(f"Waiting for processing...")
         max_retries = 60  # Wait up to 60 seconds
         retry_count = 0
-
+        
         while retry_count < max_retries:
             file_info = client.files.get(name=file_name)
-
+            
             if file_info.state.name == "ACTIVE":
                 print(f"✓ File is ready for analysis!")
                 break
-
+            
             print(f"  File state: {file_info.state.name}. Waiting...")
             time.sleep(1)
             retry_count += 1
-
+        
         if retry_count == max_retries:
             raise TimeoutError("File processing timeout")
-
+        
         file_uri = uploaded_file.uri
-
+        
         # ============================================================
         # PROCESS 1: EVENT DETECTION (30-second intervals)
         # ============================================================
@@ -185,7 +194,8 @@ async def analyze_video(filename: str, language: str = "en"):
         commentaries = commentary_generator.generate_commentary(
             events=events_dict,
             video_duration=video_duration,
-            use_streaming=False  # TODO: Implement streaming in future
+            use_streaming=False,  # TODO: Implement streaming in future
+            use_graph=use_graph_llm  # Pass graph LLM flag
         )
 
         print(f"\n✓ Commentary generation completed!")
@@ -304,7 +314,7 @@ async def analyze_video(filename: str, language: str = "en"):
             'highlights': highlights,  # For frontend compatibility
             'generated_video': output_filename
         }
-
+    
     except Exception as e:
         print("=" * 60)
         print("ERROR in analyze_video:")

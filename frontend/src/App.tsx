@@ -9,6 +9,7 @@ import {
   Card,
   Space,
   Progress,
+  Checkbox,
 } from 'antd';
 import { PlayCircleOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -32,6 +33,9 @@ function App() {
 
   // NEW: language state
   const [language, setLanguage] = useState<string>('en');
+  
+  // NEW: graph LLM toggle state
+  const [useGraphLLM, setUseGraphLLM] = useState<boolean>(false);
 
   // Streaming state
   const [chunks, setChunks] = useState<VideoChunk[]>([]);
@@ -86,8 +90,8 @@ function App() {
     setStatusMessage('Starting analysis...');
     setIsComplete(false);
 
-    // Create EventSource for streaming
-    const eventSource = videoApi.analyzeVideoStream(selectedVideo);
+    // Create EventSource for streaming with Graph LLM flag
+    const eventSource = videoApi.analyzeVideoStream(selectedVideo, useGraphLLM);
     eventSourceRef.current = eventSource;
 
     eventSource.onmessage = (event) => {
@@ -137,7 +141,7 @@ function App() {
 
             // NEW: Run batch analyze for multi-language commentary/highlights
             videoApi
-              .analyzeVideo(selectedVideo, language)
+              .analyzeVideo(selectedVideo, language, useGraphLLM)
               .then((analyzeRes) => {
                 if (analyzeRes.highlights) {
                   setHighlights(analyzeRes.highlights);
@@ -315,6 +319,16 @@ function App() {
                   ]}
                   size="large"
                 />
+                
+                {/* Graph LLM Toggle */}
+                <Checkbox
+                  checked={useGraphLLM}
+                  onChange={(e) => setUseGraphLLM(e.target.checked)}
+                  disabled={analyzing}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  🧠 Dynamic Commentary
+                </Checkbox>
 
                 <Select
                   placeholder={

@@ -12,6 +12,7 @@ from google.genai import types
 from .models import Commentary, CommentaryOutput
 from ..video.time_utils import parse_time_to_seconds, seconds_to_time, validate_commentary_duration
 from ..context_manager import get_context_manager
+from .graph_nodes import SlowPlayNode, FastPlayNode, CommentaryNode
 
 
 # System prompt for commentary generation
@@ -62,14 +63,152 @@ class CommentaryGenerator:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.commentary_file = self.output_dir / 'commentary.json'
+        
+        # Initialize graph nodes (lazy loaded only when use_graph=True)
+        self._nodes = None
+    
+    def _get_nodes(self) -> List[CommentaryNode]:
+        """Lazy load graph nodes."""
+        if self._nodes is None:
+            from .graph_nodes import (
+                GoalNode, ReplayNode, CelebrationNode,
+                SlowPlayNode, FastPlayNode
+            )
+            self._nodes = [
+                # Priority nodes (checked first in _select_node)
+                GoalNode(),
+                ReplayNode(),
+                CelebrationNode(),
+                # Intensity-based nodes (fallback)
+                SlowPlayNode(),
+                FastPlayNode()
+            ]
+            print(f"[COMMENTARY] Initialized {len(self._nodes)} graph nodes: Goal, Replay, Celebration, SlowPlay, FastPlay")
+        return self._nodes
+    
+    def _select_node(self, events: list, use_priority: bool = True) -> Optional[CommentaryNode]:
+        """
+        Select appropriate node based on events.
+        
+        Priority order (if use_priority=True):
+        1. Goal Node (if goal detected)
+        2. Replay Node (if replay flag set)
+        3. Celebration Node (if celebration detected)
+        4. Fast/Slow Play Node (intensity-based)
+        
+        Args:
+            events: List of event dictionaries
+            use_priority: If True, check for special events first
+        
+        Returns:
+            Selected CommentaryNode or None if no events
+        """
+        if not events:
+            return None
+        
+        nodes = self._get_nodes()
+        
+        # Priority routing for special events
+        if use_priority:
+            # Import special nodes for isinstance checks
+            from .graph_nodes.goal_node import GoalNode
+            from .graph_nodes.replay_node import ReplayNode
+            from .graph_nodes.celebration_node import CelebrationNode
+            
+            # Check for goal (HIGHEST PRIORITY)
+            if self._is_goal_event(events):
+                goal_node = next((n for n in nodes if isinstance(n, GoalNode)), None)
+                if goal_node:
+                    print(f"  🎯 Special event: GOAL detected!")
+                    print(f"  → Selected: {goal_node.get_style_name()}")
+                    return goal_node
+            
+            # Check for replay
+            if self._is_replay_event(events):
+                replay_node = next((n for n in nodes if isinstance(n, ReplayNode)), None)
+                if replay_node:
+                    print(f"  🎯 Special event: REPLAY detected!")
+                    print(f"  → Selected: {replay_node.get_style_name()}")
+                    return replay_node
+            
+            # Check for celebration
+            if self._is_celebration_event(events):
+                celebration_node = next((n for n in nodes if isinstance(n, CelebrationNode)), None)
+                if celebration_node:
+                    print(f"  🎯 Special event: CELEBRATION detected!")
+                    print(f"  → Selected: {celebration_node.get_style_name()}")
+                    return celebration_node
+        
+        # Fallback to intensity-based routing
+        intensities = [e.get('intensity', 5) for e in events]
+        avg_intensity = sum(intensities) / len(intensities)
+        
+        print(f"  Average event intensity: {avg_intensity:.1f}/10")
+        
+        # Find matching node based on intensity
+        for node in nodes:
+            if node.should_activate(avg_intensity):
+                print(f"  → Selected: {node.get_style_name()}")
+                print(f"  → Intensity range: {node.get_intensity_range()}")
+                return node
+        
+        # Fallback to first node
+        return nodes[0]
+    
+    def _is_goal_event(self, events: list) -> bool:
+        """
+        Check if events contain a goal.
+        
+        Args:
+            events: List of event dictionaries
+        
+        Returns:
+            True if a goal is detected
+        """
+        for event in events:
+            desc = event.get('description', '').lower()
+            # Check for goal keywords or very high intensity
+            if 'goal!' in desc or 'scores' in desc or event.get('intensity', 0) >= 9:
+                return True
+        return False
+    
+    def _is_replay_event(self, events: list) -> bool:
+        """
+        Check if events are replays.
+        
+        Args:
+            events: List of event dictionaries
+        
+        Returns:
+            True if any event is a replay
+        """
+        return any(event.get('replay', False) for event in events)
+    
+    def _is_celebration_event(self, events: list) -> bool:
+        """
+        Check if events are celebrations.
+        
+        Args:
+            events: List of event dictionaries
+        
+        Returns:
+            True if celebration detected
+        """
+        celebration_keywords = ['celebration', 'fireworks', 'erupts', 'crowd', 'fans', 'celebrates']
+        for event in events:
+            desc = event.get('description', '').lower()
+            if any(keyword in desc for keyword in celebration_keywords):
+                return True
+        return False
 
-    def _build_prompt(self, events: list, video_duration: float) -> str:
+    def _build_prompt(self, events: list, video_duration: float, use_graph: bool = False) -> str:
         """
         Build the prompt for commentary generation.
 
         Args:
             events: List of event dictionaries
             video_duration: Total video duration in seconds
+            use_graph: If True, use graph-based node selection for intensity-aware commentary
 
         Returns:
             Complete prompt string
@@ -82,8 +221,22 @@ class CommentaryGenerator:
             prompt_parts.append(context_text)
             prompt_parts.append("")
 
-        # Add system prompt
-        prompt_parts.append(COMMENTARY_SYSTEM_PROMPT)
+        # Use graph node or standard prompt
+        if use_graph:
+            node = self._select_node(events)
+            if node:
+                # Add base system prompt
+                prompt_parts.append(COMMENTARY_SYSTEM_PROMPT)
+                prompt_parts.append("")
+                # Add node-specific style modifier
+                prompt_parts.append(node.get_system_prompt_modifier())
+            else:
+                # Fallback to standard if no node selected
+                prompt_parts.append(COMMENTARY_SYSTEM_PROMPT)
+        else:
+            # Standard prompt (existing behavior)
+            prompt_parts.append(COMMENTARY_SYSTEM_PROMPT)
+        
         prompt_parts.append("")
 
         # Add events data
@@ -118,7 +271,8 @@ class CommentaryGenerator:
         self,
         events: list,
         video_duration: float,
-        use_streaming: bool = False
+        use_streaming: bool = False,
+        use_graph: bool = False
     ) -> List[Commentary]:
         """
         Generate commentary from detected events.
@@ -127,6 +281,7 @@ class CommentaryGenerator:
             events: List of event dictionaries from events.json
             video_duration: Total video duration in seconds
             use_streaming: Whether to use streaming API (future enhancement)
+            use_graph: Whether to use graph-based node selection (NEW)
 
         Returns:
             List of Commentary objects
@@ -136,13 +291,17 @@ class CommentaryGenerator:
             RuntimeError: If API call fails
         """
         print(f"\n{'='*60}")
-        print(f"COMMENTARY GENERATION STARTED")
+        print(f"🎙️  COMMENTARY GENERATION")
+        if use_graph:
+            print(f"📊 Mode: Graph-based (Intensity-aware)")
+        else:
+            print(f"📝 Mode: Standard")
         print(f"{'='*60}")
         print(f"Events to process: {len(events)}")
         print(f"Video duration: {seconds_to_time(video_duration)}")
 
-        # Build prompt
-        prompt = self._build_prompt(events, video_duration)
+        # Build prompt with optional graph routing
+        prompt = self._build_prompt(events, video_duration, use_graph=use_graph)
 
         try:
             # Generate content with JSON schema

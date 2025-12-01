@@ -29,6 +29,27 @@ class VideoProcessor:
         """Initialize video processor with FFmpeg executable."""
         self.ffmpeg_exe = get_ffmpeg_exe()
         print(f"[VIDEO PROCESSOR] Using FFmpeg from: {self.ffmpeg_exe}")
+    
+    def _has_audio_stream(self, video_path: Path) -> bool:
+        """
+        Check if video has an audio stream.
+        
+        Args:
+            video_path: Path to video file
+        
+        Returns:
+            True if video has audio stream, False otherwise
+        """
+        try:
+            cmd = [self.ffmpeg_exe, '-i', str(video_path)]
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            # FFmpeg outputs stream info to stderr
+            # Look for "Audio:" which indicates an audio stream
+            return 'Audio:' in result.stderr
+        except Exception as e:
+            print(f"[VIDEO PROCESSOR] Warning: Could not detect audio stream: {e}")
+            # Assume video has audio if detection fails (safer default)
+            return True
 
     def ensure_video_has_audio(self, video_path: Path) -> Path:
         """
@@ -250,6 +271,10 @@ class VideoProcessor:
                     print(f"[VIDEO PROCESSOR] Video saved (original audio only): {output_filename}")
                     return output_filename
 
+                # Check if video has audio stream
+                has_audio = self._has_audio_stream(video_path)
+                print(f"[VIDEO PROCESSOR] Video has audio: {has_audio}")
+
                 # Build ffmpeg command
                 print(f"[VIDEO PROCESSOR] Building ffmpeg command...")
                 cmd = [self.ffmpeg_exe, '-y', '-i', str(video_path)]
@@ -261,9 +286,12 @@ class VideoProcessor:
                 # Build filter_complex
                 filter_parts = []
 
-                # Reduce original video audio to 20% volume
-                filter_parts.append(f"[0:a]volume=0.2[orig]")
+                # Add original audio to mix ONLY if video has audio
+                if has_audio:
+                    # Reduce original video audio to 20% volume
+                    filter_parts.append(f"[0:a]volume=0.2[orig]")
 
+                # Delay each commentary audio
                 for i, audio_info in enumerate(audio_files):
                     delay_ms = audio_info['delay_ms']
                     # Audio input index starts at 1 (0 is video)
@@ -272,13 +300,24 @@ class VideoProcessor:
                     # Add delay filter (adelay uses milliseconds and needs to be specified per channel)
                     filter_parts.append(f"[{audio_input_idx}:a]adelay={delay_ms}|{delay_ms}[{label}]")
 
-                # Mix all delayed audio tracks together with original video audio (at 20% volume)
+                # Mix all audio tracks together
                 audio_labels = [f"[a{i}]" for i in range(len(audio_files))]
-                all_audio = '[orig]' + ''.join(audio_labels)
-                num_inputs = len(audio_files) + 1  # +1 for original video audio
+                
+                if has_audio:
+                    # Mix original audio (at 20%) with commentary
+                    all_audio = '[orig]' + ''.join(audio_labels)
+                    num_inputs = len(audio_files) + 1  # +1 for original video audio
+                    volume_multiplier = num_inputs
+                else:
+                    # Just mix commentary tracks (no original audio)
+                    all_audio = ''.join(audio_labels)
+                    num_inputs = len(audio_files)
+                    # Less aggressive volume boost when there's no competing audio
+                    volume_multiplier = max(1, num_inputs - 2)
 
                 # Mix all audio with dropout_transition=0 to allow immediate overlaps
-                filter_parts.append(f"{all_audio}amix=inputs={num_inputs}:duration=first:dropout_transition=0,volume={num_inputs}[aout]")
+                # CRITICAL: Use duration=longest to ensure all delayed audio plays
+                filter_parts.append(f"{all_audio}amix=inputs={num_inputs}:duration=longest:dropout_transition=0,volume={volume_multiplier}[aout]")
 
                 filter_complex = ';'.join(filter_parts)
 

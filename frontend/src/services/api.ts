@@ -21,15 +21,17 @@ export const videoApi = {
   },
 
   /**
-   * Analyze a video and get highlights with generated commentary video (BATCH MODE - deprecated)
+   * Analyze a video and get highlights with generated commentary video (BATCH MODE)
    */
   analyzeVideo: async (
     filename: string,
-    language: string,              // ✅ changed: add language parameter
+    language: string,
+    useGraphLLM: boolean = false,  // NEW: Graph LLM toggle
   ): Promise<AnalyzeResponse> => {
     const payload: AnalyzeRequest = {
       filename,
-      language,                   // ✅ changed: include language in request body
+      language,
+      use_graph_llm: useGraphLLM,  // NEW: Send graph LLM flag
     };
     const response = await apiClient.post<AnalyzeResponse>('/analyze', payload);
     return response.data;
@@ -39,8 +41,15 @@ export const videoApi = {
    * Analyze a video with real-time streaming (STREAMING MODE - recommended)
    * Returns an EventSource for Server-Sent Events
    */
-  analyzeVideoStream: (filename: string): EventSource => {
-    const url = `${API_BASE_URL}/analyze-stream/${encodeURIComponent(filename)}`;
+  analyzeVideoStream: (filename: string, useGraphLLM: boolean = false): EventSource => {
+    const params = new URLSearchParams();
+    if (useGraphLLM) {
+      params.append('use_graph_llm', 'true');
+    }
+    const queryString = params.toString();
+    const url = queryString 
+      ? `${API_BASE_URL}/analyze-stream/${encodeURIComponent(filename)}?${queryString}`
+      : `${API_BASE_URL}/analyze-stream/${encodeURIComponent(filename)}`;
     return new EventSource(url);
   },
 

@@ -54,6 +54,7 @@ dist-ssr/
 output/
 *.mp4
 videos/*.mp4
+videos/streaming/
 
 # Logs
 *.log

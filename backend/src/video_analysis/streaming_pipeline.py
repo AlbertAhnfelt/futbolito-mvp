@@ -41,16 +41,18 @@ class StreamingPipeline:
     - Chunk Queue: Video chunks ready for streaming
     """
 
-    def __init__(self, api_key: str, elevenlabs_api_key: Optional[str] = None):
+    def __init__(self, api_key: str, elevenlabs_api_key: Optional[str] = None, use_graph_llm: bool = False):
         """
         Initialize streaming pipeline.
 
         Args:
             api_key: Gemini API key
             elevenlabs_api_key: ElevenLabs API key (optional)
+            use_graph_llm: Use graph-based commentary generation (NEW)
         """
         self.api_key = api_key
         self.elevenlabs_api_key = elevenlabs_api_key
+        self.use_graph_llm = use_graph_llm
 
         # Initialize components
         self.event_detector = EventDetector(api_key=api_key)
@@ -387,7 +389,8 @@ class StreamingPipeline:
                         self.commentary_generator.generate_commentary,
                         events=[e.model_dump() for e in events],
                         video_duration=interval[1],  # Use interval end as max duration
-                        use_streaming=False
+                        use_streaming=False,
+                        use_graph=self.use_graph_llm  # Pass Graph LLM flag
                     )
 
                     # Push each commentary to queue immediately
@@ -878,19 +881,21 @@ class StreamingPipeline:
         return max(1, int(self.video_duration / 30))
 
 
-async def streaming_pipeline(filename: str) -> AsyncGenerator[Dict[str, Any], None]:
+async def streaming_pipeline(filename: str, use_graph_llm: bool = False) -> AsyncGenerator[Dict[str, Any], None]:
     """
     Main entry point for streaming pipeline.
 
     Args:
         filename: Video filename in videos/ directory
+        use_graph_llm: Use graph-based commentary generation (NEW)
 
     Yields:
         SSE events with chunk URLs and progress updates
     """
     pipeline = StreamingPipeline(
         api_key=GEMINI_API_KEY,
-        elevenlabs_api_key=ELEVENLABS_API_KEY
+        elevenlabs_api_key=ELEVENLABS_API_KEY,
+        use_graph_llm=use_graph_llm  # Pass Graph LLM flag
     )
 
     async for event in pipeline.process_video_stream(filename):
