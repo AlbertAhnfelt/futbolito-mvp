@@ -16,6 +16,7 @@ import { videoApi } from './services/api';
 import type { Highlight, Event, StreamEvent, VideoChunk } from './types';
 import { MatchContextForm } from './components/MatchContextForm';
 import './App.css';
+import Hls from 'hls.js';
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
@@ -40,13 +41,23 @@ function App() {
   const [statusMessage, setStatusMessage] = useState('');
   const [isComplete, setIsComplete] = useState(false);
 
+  // Streaming State
+  const [streamUrl, setStreamUrl] = useState<string>('');
+  const [isWaitingForStream, setIsWaitingForStream] = useState(false);
+
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const hlsRef = useRef<Hls | null>(null);
 
   // Fetch videos on component mount
   useEffect(() => {
     fetchVideos();
+    return () => {
+      // Cleanup on unmount
+      if (hlsRef.current) hlsRef.current.destroy();
+      if (eventSourceRef.current) eventSourceRef.current.close();
+    };
   }, []);
 
   const fetchVideos = async () => {
@@ -62,85 +73,85 @@ function App() {
       setLoading(false);
     }
   };
+  
 
   const handleAnalyzeStreaming = () => {
-    if (!selectedVideo) {
-      setError('Please select a video');
-      return;
-    }
-
-    // Fermer une éventuelle connexion existante
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
-
-    // Reset nécessaire
+    if (!selectedVideo) return;
+    
+    // Reset States
     setAnalyzing(true);
-    setError('');
-    setHighlights([]);
-    setEvents([]);
-    setGeneratedVideo('');
-    setChunks([]);
-    setCurrentChunkIndex(0);
-    setProgress(0);
-    setStatusMessage('Starting streaming analysis...');
+    setStreamUrl(''); 
+    setStatusMessage('Initializing stream...');
     setIsComplete(false);
+    setIsWaitingForStream(true);
+    setError('');
+    
+    if (eventSourceRef.current) eventSourceRef.current.close();
+    if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+    }
 
-    // 👉 Appel de ta méthode analyzeVideoStream()
+    // Connect to SSE
     const eventSource = videoApi.analyzeVideoStream(selectedVideo);
     eventSourceRef.current = eventSource;
-
-    // Gestion des messages SSE (identique à handleAnalyze)
+    
     eventSource.onmessage = (event) => {
-      try {
-        const data: StreamEvent = JSON.parse(event.data);
+        try {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'status') {
+                 setStatusMessage(data.message);
+                 if (data.progress) setProgress(data.progress);
+            }
+            // Dès qu'on reçoit le premier chunk, on active le lecteur HLS
+            else if (data.type === 'chunk_ready' && !streamUrl) {
+                // data.url ressemble à : "/videos/generated-videos/stream_folder_123/segment_000.mp4"
+                // On doit extraire le dossier pour appeler notre endpoint dynamique : /stream/{folder}/index.m3u8
+                
+                // New code in App.tsx
+                const parts = data.url.split('/'); 
+                // Assumes structure is .../folderName/filename.mp4
+                const folderName = parts[parts.length - 2]; 
 
-        switch (data.type) {
-          case 'status':
-            setStatusMessage(data.message);
-            setProgress(data.progress);
-            break;
+                // Use the function from api.ts
+                const hlsUrl = videoApi.getStreamUrl(folderName);
 
-          case 'chunk_ready':
-            const baseUrl = 'http://localhost:8000';
-            const newChunk: VideoChunk = {
-              index: data.index,
-              url: `${baseUrl}${data.url}`,
-              startTime: data.start_time,
-              endTime: data.end_time,
-            };
-            setChunks((prev) => [...prev, newChunk]);
-            break;
+                console.log("Stream folder detected:", folderName);
+                console.log("Starting HLS stream at:", hlsUrl);
 
-          case 'complete':
-            setIsComplete(true);
-            setProgress(100);
-            setStatusMessage('Complete');
-            setGeneratedVideo(data.final_video);
-            eventSource.close();
-            setAnalyzing(false);
-            break;
-
-          case 'error':
-            setError(`Error: ${data.message}`);
-            eventSource.close();
-            setAnalyzing(false);
-            break;
+                setStreamUrl(hlsUrl);
+                setIsWaitingForStream(false);
+            }
+            else if (data.type === 'complete') {
+                setIsComplete(true);
+                setStatusMessage('Analysis complete.');
+                setAnalyzing(false); 
+                eventSource.close();
+                
+                // Optionnel: charger les résultats finaux (events, highlights)
+                loadFinalResults();
+            }
+            else if (data.type === 'error') {
+                setError(data.message);
+                setAnalyzing(false);
+                eventSource.close();
+            }
+        } catch (e) {
+            console.error("Error parsing SSE", e);
         }
-      } catch (err) {
-        console.error('Error parsing SSE:', err);
-        setError('Error decoding streaming data');
-      }
     };
-
+    
     eventSource.onerror = () => {
-      setError('Connection error during streaming');
-      eventSource.close();
-      setAnalyzing(false);
+        console.error("SSE Connection lost");
+        // Ne pas couper tout de suite, parfois c'est juste une reconnexion
     };
   };
 
-
+  const loadFinalResults = () => {
+     videoApi.getEvents().then(data => setEvents(data.events || []));
+     // On pourrait aussi charger les highlights ici
+  };
 
 
   const handleAnalyze = () => {
@@ -283,18 +294,35 @@ function App() {
   };
 
   // Set video source when first chunk is available and video element is ready
+  // Auto-play du premier chunk quand il arrive
   useEffect(() => {
-    if (chunks.length > 0 && videoRef.current && !videoRef.current.src) {
-      const firstChunk = chunks[0];
-      console.log('useEffect: Setting video source to first chunk:', firstChunk.url);
-      videoRef.current.src = firstChunk.url;
-      videoRef.current.load();
-      videoRef.current.play().catch((err) => {
-        console.warn('Autoplay prevented:', err);
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chunks, videoRef.current]);
+      if (streamUrl && videoRef.current) {
+          if (Hls.isSupported()) {
+              const hls = new Hls({
+                  debug: true, // Mettre à false en prod
+                  manifestLoadingTimeOut: 10000,
+                  manifestLoadingMaxRetry: 10,
+              });
+              
+              hls.loadSource(streamUrl);
+              hls.attachMedia(videoRef.current);
+              
+              hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                  videoRef.current?.play().catch(e => console.log("Autoplay blocked", e));
+              });
+              
+              // Cleanup
+              return () => {
+                  hls.destroy();
+              };
+          } 
+          // Fallback pour Safari (qui supporte HLS nativement)
+          else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+              videoRef.current.src = streamUrl;
+              videoRef.current.play();
+          }
+      }
+  }, [streamUrl]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -434,6 +462,7 @@ function App() {
                   size="large"
                   icon={<PlayCircleOutlined />}
                   onClick={handleAnalyzeStreaming}
+                  loading={analyzing && !streamUrl}
                   disabled={!selectedVideo || analyzing}
                 >
                   Analyze Streaming
@@ -506,7 +535,43 @@ function App() {
             />
           )}
 
-          {(chunks.length > 0 || generatedVideo) && (
+          {(analyzing || streamUrl) && (
+              <Card title="Live Commentary" style={{ marginBottom: 24 }}>
+                  <div style={{ position: 'relative', width: '100%', height: '450px', background: '#000' }}>
+                      
+                      {/* Ecran d'attente tant que streamUrl est vide */} *
+                      {isWaitingForStream && (
+                        <div style={{ 
+                            position: 'absolute', inset: 0, zIndex: 10,
+                            display: 'flex', flexDirection: 'column', 
+                            justifyContent: 'center', alignItems: 'center',
+                            background: 'rgba(0,0,0,0.8)', color: 'white'
+                        }}>
+                            <Title level={5} style={{ color: 'white', marginTop: 20 }}>Generating first segment...</Title>
+                            <Text style={{ color: '#ccc' }}>This usually takes about 20-40 seconds.</Text>
+                            <Text style={{ color: '#6fbf8b', marginTop: 10 }}>{statusMessage}</Text>
+                        </div>
+                      )}
+                      
+                      <video
+                        ref={videoRef}
+                        controls
+                        muted // Muted often required for autoplay
+                        playsInline
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                      <div style={{ marginTop: 16, textAlign: 'center' }}>
+                        <Text type="secondary">{statusMessage}</Text>
+                        {isComplete && <Text type="success" strong> - Analysis Finished</Text>}
+                      </div>
+                  </div>
+              </Card>
+          )}
+
+          {/* On affiche le lecteur si on analyse OU si on a des chunks OU si la vidéo est finie */}
+          {/* ... le début du code reste inchangé ... */}
+
+          {(analyzing || chunks.length > 0 || generatedVideo || isComplete) && (
             <Card
               title={
                 <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
@@ -515,36 +580,97 @@ function App() {
               }
               style={{ borderRadius: 8, marginBottom: 24 }}
             >
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
+              {/* Conteneur principal avec hauteur fixe pour éviter le "saut" ou la fermeture */}
+              <div style={{ 
+                position: 'relative', 
+                width: '100%', 
+                maxWidth: '800px', 
+                height: '450px', // Hauteur forcée pour empêcher la fermeture
+                background: '#000', 
+                borderRadius: 8,
+                margin: '0 auto',
+                overflow: 'hidden'
+              }}>
+
+                {/* ÉCRAN D'ATTENTE (Overlay) */}
+                {/* On l'affiche tant qu'on n'a pas reçu le premier chunk */}
+                {chunks.length === 0 && (
+                  <div style={{ 
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%', 
+                    height: '100%', 
+                    zIndex: 10, // Au-dessus de la vidéo
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    justifyContent: 'center', 
+                    alignItems: 'center',
+                    color: 'white',
+                    backgroundColor: '#000'
+                  }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <p style={{ fontSize: '32px', marginBottom: '10px' }}>⚽</p>
+                      <Title level={5} style={{ color: 'white' }}>Analyzing Match...</Title>
+                      <p style={{ color: '#aaa' }}>Waiting for first video segment (approx. 20s)</p>
+                      <Progress 
+                        percent={progress} 
+                        showInfo={false} 
+                        strokeColor="#6fbf8b" 
+                        trailColor="#333"
+                        style={{ width: '200px', marginTop: '10px' }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Message d'erreur si le stream est fini mais qu'aucune vidéo n'est arrivée */}
+                {!analyzing && isComplete && chunks.length === 0 && (
+                  <div style={{ 
+                    position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
+                    zIndex: 20, background: '#000', color: '#ff4d4f',
+                    display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+                    textAlign: 'center', padding: '20px'
+                  }}>
+                    <p style={{ fontSize: '32px', marginBottom: '10px' }}>⚠️</p>
+                    <Title level={5} style={{ color: '#ff4d4f' }}>Stream Finished but No Video Data</Title>
+                    <p>The backend finished processing, but the frontend received no video chunks.</p>
+                    <p style={{ fontSize: '12px', color: '#aaa' }}>Check your browser console for connection errors or CORS issues.</p>
+                  </div>
+                )}
+
+                {/* LECTEUR VIDÉO */}
+                {/* Il est toujours présent dans le DOM pour que 'ref' fonctionne, mais caché derrière l'overlay au début */}
                 <video
                   ref={videoRef}
                   controls
+                  muted={true}      
+                  autoPlay={true}   
+                  playsInline
                   onEnded={handleVideoEnded}
                   onError={(e) => {
-                    console.error('Video error:', e);
-                    console.error('Video error details:', {
-                      error: videoRef.current?.error,
-                      networkState: videoRef.current?.networkState,
-                      readyState: videoRef.current?.readyState,
-                      currentSrc: videoRef.current?.currentSrc,
-                    });
+                      console.error("Video Error Details:", e.currentTarget.error);
                   }}
-                  onLoadStart={() => console.log('Video load started')}
-                  onLoadedData={() => console.log('Video data loaded')}
-                  onCanPlay={() => console.log('Video can play')}
-                  style={{ width: '100%', maxWidth: '800px', borderRadius: 8 }}
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'contain' // Garde les proportions de la vidéo
+                  }}
                 >
                   Your browser does not support the video tag.
                 </video>
               </div>
-              {chunks.length > 0 && (
-                <div style={{ marginTop: 16, textAlign: 'center' }}>
+
+              <div style={{ marginTop: 16, textAlign: 'center' }}>
+                {chunks.length > 0 ? (
                   <Text type="secondary">
-                    Chunk {currentChunkIndex + 1} of {chunks.length}
-                    {!isComplete && ' - Processing continues in background...'}
+                    Playing segment {currentChunkIndex + 1} / {chunks.length}
+                    {!isComplete && ' (Live generating...)'}
                   </Text>
-                </div>
-              )}
+                ) : (
+                  <Text type="secondary">{statusMessage}</Text>
+                )}
+              </div>
             </Card>
           )}
 

@@ -1,5 +1,9 @@
 from fastapi import APIRouter, HTTPException, Response
-from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse, Response
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+import os
+import glob
 from pydantic import BaseModel
 from pathlib import Path
 import json
@@ -15,6 +19,20 @@ router = APIRouter()
 class AnalyzeRequest(BaseModel):
     filename: str
     language: str = "en"  # ✅ changed: add language field with default "en"
+
+
+# Configuration CORS pour que le frontend React puisse accéder aux vidéos
+# router.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"], # À restreindre en prod
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
+
+
+# 1. Servir les fichiers vidéos MP4 de manière statique
+# router.mount("/videos", StaticFiles(directory=BASE_VIDEO_DIR), name="videos")
 
 
 @router.get("/videos/list")
@@ -42,6 +60,49 @@ async def analyze_video_endpoint(request: AnalyzeRequest):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+
+
+@router.get("/outputs/{folder_name}/stream.m3u8")
+async def get_playlist(folder_name: str):
+    """
+    Génère dynamiquement la playlist HLS en listant les fichiers MP4 présents.
+    """
+    folder_path = folder_name
+    
+    if not os.path.exists(folder_path):
+        # Si le dossier n'existe pas encore (le process n'a pas commencé)
+        raise HTTPException(status_code=404, detail="Stream not found or not started")
+
+    # Récupérer les fichiers mp4 et les trier (par nom ou date de création)
+    # Assumons que les fichiers sont nommés par ordre alphabétique ou numérotés
+    files = sorted(glob.glob(os.path.join(folder_path, "*.mp4")))
+    
+    if not files:
+        # Le dossier existe mais pas encore de vidéo (phase d'attente initiale)
+        raise HTTPException(status_code=404, detail="No segments available yet")
+
+    # Construction du contenu du fichier m3u8
+    # #EXT-X-PLAYLIST-TYPE:EVENT signifie que la playlist s'allonge avec le temps
+    content = [
+        "#EXTM3U",
+        "#EXT-X-VERSION:3",
+        "#EXT-X-TARGETDURATION:21",  # Un peu plus que vos 20s pour la marge
+        "#EXT-X-MEDIA-SEQUENCE:0",
+        "#EXT-X-PLAYLIST-TYPE:EVENT" 
+    ]
+
+    for file_path in files:
+        filename = os.path.basename(file_path)
+        # On suppose que chaque chunk fait environ 20s
+        content.append(f"#EXTINF:20.0,")
+        # L'URL vers le fichier statique
+        content.append(f"http://localhost:8000/videos/{folder_name}/{filename}")
+
+    # Si le stream est fini, on ajouterait #EXT-X-ENDLIST, mais ici on suppose que c'est en cours
+    
+    return Response(content="\n".join(content), media_type="application/vnd.apple.mpegurl")
 
 @router.get("/analyze-stream/{filename}")
 async def analyze_stream(filename: str):
@@ -55,6 +116,21 @@ async def analyze_stream(filename: str):
         processor.stream_generator(), 
         media_type="text/event-stream"
     )
+
+# @router.get("/outputs/{folder_name}/{filename}")
+# async def get_output_file(folder_name: str, filename: str):
+
+#     file_path = f"outputs/{folder_name}/{filename}"
+
+#     if not file_path.exists():
+#         raise HTTPException(status_code=404, detail="File not found")
+    
+#     # Détection simple du type MIME
+#     media_type = "video/mp4"
+#     if filename.endswith(".m3u8"):
+#         media_type = "application/vnd.apple.mpegurl" # Type MIME pour HLS
+
+#     return FileResponse(path=file_path, media_type=media_type)
 
 # @router.get("/analyze-stream/{filename}")
 # async def analyze_video_stream(filename: str):
