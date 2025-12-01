@@ -8,11 +8,14 @@ from pathlib import Path
 from typing import Optional, List
 from google import genai
 from google.genai import types
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from google.api_core.exceptions import ResourceExhausted
 
 from .models import Commentary, CommentaryOutput
 from ..video.time_utils import parse_time_to_seconds, seconds_to_time, validate_commentary_duration
 from ..context_manager import get_context_manager
 from ..prompts import COMMENTARY_SYSTEM_PROMPT
+from ..utils.rate_limiter import gemini_rate_limiter
 
 # Try to import StateManager, but allow passing it in __init__ if import fails
 try:
@@ -105,6 +108,38 @@ class CommentaryGenerator:
 
         return "\n".join(prompt_parts)
 
+    @retry(
+        retry=retry_if_exception_type(ResourceExhausted),
+        wait=wait_exponential(multiplier=2, min=4, max=60),
+        stop=stop_after_attempt(5)
+    )
+    def _call_gemini_api_with_retry(self, prompt: str) -> str:
+        """
+        Call Gemini API with retry logic for quota exhaustion errors.
+
+        Implements exponential backoff: 4s -> 8s -> 16s -> 32s -> 60s
+        Max 5 attempts before giving up.
+
+        Args:
+            prompt: The prompt string to send to Gemini
+
+        Returns:
+            str: The response text from Gemini
+        """
+        # Enforce rate limiting before API call
+        gemini_rate_limiter.wait_if_needed()
+
+        print("[COMMENTARY] Calling Gemini API...")
+        response = self.client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=CommentaryOutput.model_json_schema()
+            )
+        )
+        return response.text
+
     async def generate_commentary(
         self,
         events: list,
@@ -137,18 +172,8 @@ class CommentaryGenerator:
         prompt = self._build_prompt(events, video_duration)
 
         try:
-            # Generate content with JSON schema
-            response = self.client.models.generate_content(
-                model="gemini-2.0-flash-exp",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=CommentaryOutput.model_json_schema()
-                )
-            )
-
-            # Parse response
-            response_text = response.text
+            # Call API with retry logic and rate limiting
+            response_text = self._call_gemini_api_with_retry(prompt)
             print(f"[COMMENTARY] Received response: {len(response_text)} characters")
 
             # Parse JSON and validate with Pydantic

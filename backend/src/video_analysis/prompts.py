@@ -78,7 +78,12 @@ Each event object must exactly follow this structure:
 
 Notes:
 
-"time" → Time relative to the video file start (00:00:00 - 00:00:30). NEVER EXCEED 30 SECONDS.
+"time" → **CRITICAL**: Time MUST be relative to THIS CLIP's start time (00:00:00 to 00:00:30).
+         - The clip always starts at 00:00:00, even if it's from the middle of a longer video
+         - DO NOT use the original video file's absolute timestamps
+         - If an event happens at the very end of a 30-second clip, label it as 00:00:29 or 00:00:30
+         - NEVER EXCEED 00:00:30 for a 30-second clip
+         - Example: If this is a 30-second clip, use times between 00:00:00 and 00:00:30 ONLY
 
 "replay" → boolean: true if it's a replay segment, false if live action.
 
