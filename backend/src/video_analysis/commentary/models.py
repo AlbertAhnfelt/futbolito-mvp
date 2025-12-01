@@ -3,21 +3,26 @@ Pydantic models for commentary generation output.
 """
 
 from pydantic import BaseModel, Field, field_validator
-from typing import List
+from typing import List, Literal
 
 
 class Commentary(BaseModel):
     """
-    Represents a single commentary segment.
+    Represents a single commentary segment with speaker identification.
 
     Attributes:
         start_time: Start timestamp in HH:MM:SS format
         end_time: End timestamp in HH:MM:SS format
         commentary: The commentary text (max 2.5 words/second)
+        speaker: Which commentator is speaking (COMMENTATOR_1 or COMMENTATOR_2)
     """
     start_time: str = Field(..., description="Start timestamp in HH:MM:SS format")
     end_time: str = Field(..., description="End timestamp in HH:MM:SS format")
     commentary: str = Field(..., description="Commentary text")
+    speaker: Literal["COMMENTATOR_1", "COMMENTATOR_2"] = Field(
+        ..., 
+        description="Which commentator is speaking"
+    )
 
     @field_validator('start_time', 'end_time')
     @classmethod
@@ -39,4 +44,7 @@ class CommentaryOutput(BaseModel):
     """
     Output model for commentary generation containing a list of commentary segments.
     """
-    commentaries: List[Commentary] = Field(default_factory=list, description="List of commentary segments")
+    commentaries: List[Commentary] = Field(
+        default_factory=list, 
+        description="List of commentary segments with speaker identification"
+    )

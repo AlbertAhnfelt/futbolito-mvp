@@ -1,5 +1,5 @@
 """
-Commentary generation module.
+Commentary generation module with dual commentator support.
 Generates football commentary from detected events using Gemini API.
 """
 
@@ -27,8 +27,9 @@ except ImportError:
 class CommentaryGenerator:
     """
     Generates football commentary from detected events using Gemini API.
-
-    Creates 5-30 second commentary segments with proper gaps and word limits.
+    
+    Creates dual-commentator dialogue with proper speaker identification,
+    timing, gaps, and word limits.
     """
 
     def __init__(self, api_key: str, state_manager=None, output_dir: Optional[Path] = None):
@@ -59,7 +60,7 @@ class CommentaryGenerator:
 
     def _build_prompt(self, events: list, video_duration: float) -> str:
         """
-        Build the prompt for commentary generation.
+        Build the prompt for dual-commentator commentary generation.
 
         Args:
             events: List of event dictionaries
@@ -76,7 +77,7 @@ class CommentaryGenerator:
             prompt_parts.append(context_text)
             prompt_parts.append("")
 
-        # Add system prompt
+        # Add system prompt (now with dual commentator instructions)
         prompt_parts.append(COMMENTARY_SYSTEM_PROMPT)
         prompt_parts.append("")
 
@@ -89,19 +90,28 @@ class CommentaryGenerator:
         prompt_parts.append(f"VIDEO DURATION: {seconds_to_time(video_duration)}")
         prompt_parts.append("")
         prompt_parts.append("Generate commentary segments that:")
-        prompt_parts.append("1. Cover the important events from the match")
-        prompt_parts.append("2. Are between 5-30 seconds each")
-        prompt_parts.append("3. Have 1-4 second gaps between segments")
+        prompt_parts.append("1. Create natural dialogue between COMMENTATOR_1 and COMMENTATOR_2")
+        prompt_parts.append("2. Each segment is 3-15 seconds")
+        prompt_parts.append("3. Have 0.5-2 second gaps between segments")
         prompt_parts.append("4. Stay within word limits (2.5 words/second MAX)")
-        prompt_parts.append("5. Use player names when available from match context")
+        prompt_parts.append("5. Alternate speakers naturally - respond to each other")
+        prompt_parts.append("6. Use player names from match context when available")
+        prompt_parts.append("7. COMMENTATOR_1 leads play-by-play, COMMENTATOR_2 adds analysis/excitement")
         prompt_parts.append("")
         prompt_parts.append("Return a JSON object with this structure:")
         prompt_parts.append("""{
   "commentaries": [
     {
       "start_time": "00:00:00",
+      "end_time": "00:00:05",
+      "commentary": "Text here (max 12 words for 5 seconds)",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:06",
       "end_time": "00:00:10",
-      "commentary": "Text here (max 25 words for 10 seconds)"
+      "commentary": "Response text (max 10 words for 4 seconds)",
+      "speaker": "COMMENTATOR_2"
     }
   ]
 }""")
@@ -129,7 +139,7 @@ class CommentaryGenerator:
         # Enforce rate limiting before API call
         gemini_rate_limiter.wait_if_needed()
 
-        print("[COMMENTARY] Calling Gemini API...")
+        print("[COMMENTARY] Calling Gemini API for dual-commentator generation...")
         response = self.client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
@@ -147,7 +157,7 @@ class CommentaryGenerator:
         use_streaming: bool = False
     ) -> List[Commentary]:
         """
-        Generate commentary from detected events.
+        Generate dual-commentator commentary from detected events.
         ASYNC method that uses StateManager to persist state.
 
         Args:
@@ -156,17 +166,18 @@ class CommentaryGenerator:
             use_streaming: Whether to use streaming API (future enhancement)
 
         Returns:
-            List of Commentary objects
+            List of Commentary objects with speaker identification
 
         Raises:
             ValueError: If response is invalid
             RuntimeError: If API call fails
         """
         print(f"\n{'='*60}")
-        print(f"COMMENTARY GENERATION STARTED")
+        print(f"DUAL COMMENTARY GENERATION STARTED")
         print(f"{'='*60}")
         print(f"Events to process: {len(events)}")
         print(f"Video duration: {seconds_to_time(video_duration)}")
+        print(f"Mode: Dual Commentator (COMMENTATOR_1 + COMMENTATOR_2)")
 
         # Build prompt
         prompt = self._build_prompt(events, video_duration)
@@ -181,13 +192,19 @@ class CommentaryGenerator:
             commentary_output = CommentaryOutput(**commentary_data)
 
             print(f"[COMMENTARY] Generated {len(commentary_output.commentaries)} commentary segments")
+            
+            # Count segments per speaker
+            speaker_counts = {}
+            for c in commentary_output.commentaries:
+                speaker_counts[c.speaker] = speaker_counts.get(c.speaker, 0) + 1
+            print(f"[COMMENTARY] Speaker breakdown: {speaker_counts}")
 
             # Validate duration constraints
             commentaries_list = [c.model_dump() for c in commentary_output.commentaries]
             validated = validate_commentary_duration(commentaries_list)
 
-            # Validate gaps between segments
-            validated_commentaries = self._validate_gaps(validated)
+            # Validate gaps and timing
+            validated_commentaries = self._validate_dual_commentary(validated)
 
             # Convert back to Commentary objects
             final_commentaries = [Commentary(**c) for c in validated_commentaries]
@@ -196,9 +213,15 @@ class CommentaryGenerator:
             await self._save_commentaries(final_commentaries)
 
             print(f"\n{'='*60}")
-            print(f"COMMENTARY GENERATION COMPLETED")
+            print(f"DUAL COMMENTARY GENERATION COMPLETED")
             print(f"{'='*60}")
             print(f"Total commentary segments: {len(final_commentaries)}")
+            
+            # Final speaker counts
+            final_speaker_counts = {}
+            for c in final_commentaries:
+                final_speaker_counts[c.speaker] = final_speaker_counts.get(c.speaker, 0) + 1
+            print(f"Final speaker breakdown: {final_speaker_counts}")
 
             return final_commentaries
 
@@ -211,18 +234,22 @@ class CommentaryGenerator:
             print(f"[ERROR] Commentary generation failed: {e}")
             raise RuntimeError(f"Commentary generation API call failed: {e}")
 
-    def _validate_gaps(self, commentaries: List[dict]) -> List[dict]:
+    def _validate_dual_commentary(self, commentaries: List[dict]) -> List[dict]:
         """
-        Validate and enforce 1-4 second gaps between commentary segments.
+        Validate dual-commentator commentary with proper gaps and timing.
+        
+        Also validates that speakers alternate naturally.
 
         Args:
-            commentaries: List of commentary dictionaries
+            commentaries: List of commentary dictionaries with speaker field
 
         Returns:
-            List of validated commentary dictionaries with proper gaps
+            List of validated commentary dictionaries
         """
-        MIN_GAP = 1  # seconds
-        MAX_GAP = 2  # seconds
+        MIN_GAP = 0.5  # seconds (shorter for natural dialogue)
+        MAX_GAP = 2.0  # seconds
+        MIN_DURATION = 3  # seconds
+        MAX_DURATION = 15  # seconds
 
         validated = []
 
@@ -242,25 +269,31 @@ class CommentaryGenerator:
                 new_start = prev_end + MIN_GAP
                 old_start = commentary['start_time']
                 commentary['start_time'] = seconds_to_time(new_start)
-                print(f"[COMMENTARY] Adjusted start_time from {old_start} to {commentary['start_time']} (gap was {gap:.1f}s, min is {MIN_GAP}s)")
+                print(f"[COMMENTARY] {commentary['speaker']}: Adjusted start_time from {old_start} to {commentary['start_time']} (gap was {gap:.1f}s)")
 
-            # If gap is too large, warn but keep it (might be intentional for quiet periods)
+            # If gap is too large, warn
             elif gap > MAX_GAP:
-                print(f"[COMMENTARY] Warning: Large gap of {gap:.1f}s between segments (max recommended is {MAX_GAP}s)")
+                print(f"[COMMENTARY] Warning: Large gap of {gap:.1f}s between {validated[-1]['speaker']} and {commentary['speaker']}")
 
-            # Check segment duration (5-30 seconds)
+            # Check segment duration
             start_secs = parse_time_to_seconds(commentary['start_time'])
             end_secs = parse_time_to_seconds(commentary['end_time'])
             duration = end_secs - start_secs
 
-            if duration < 5:
-                print(f"[COMMENTARY] Warning: Segment duration {duration:.1f}s is less than 5 seconds")
-            elif duration > 30:
-                # Trim to 30 seconds
-                new_end = start_secs + 30
+            if duration < MIN_DURATION:
+                print(f"[COMMENTARY] Warning: {commentary['speaker']} segment duration {duration:.1f}s is less than {MIN_DURATION}s")
+            elif duration > MAX_DURATION:
+                # Trim to max duration
+                new_end = start_secs + MAX_DURATION
                 old_end = commentary['end_time']
                 commentary['end_time'] = seconds_to_time(new_end)
-                print(f"[COMMENTARY] Trimmed end_time from {old_end} to {commentary['end_time']} (duration was {duration:.1f}s, max is 30s)")
+                print(f"[COMMENTARY] {commentary['speaker']}: Trimmed end_time from {old_end} to {commentary['end_time']} (duration was {duration:.1f}s)")
+
+            # Check for speaker variety (warn if same speaker 3+ times in a row)
+            if i >= 2:
+                last_two_speakers = [validated[-2]['speaker'], validated[-1]['speaker']]
+                if all(s == commentary['speaker'] for s in last_two_speakers):
+                    print(f"[COMMENTARY] Note: {commentary['speaker']} speaking 3 times in a row")
 
             validated.append(commentary)
 
@@ -293,7 +326,7 @@ class CommentaryGenerator:
         Load commentaries from commentary.json file.
 
         Returns:
-            List of Commentary objects
+            List of Commentary objects with speaker identification
 
         Raises:
             FileNotFoundError: If commentary.json doesn't exist
