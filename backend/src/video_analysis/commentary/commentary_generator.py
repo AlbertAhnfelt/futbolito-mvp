@@ -4,6 +4,7 @@ Generates football commentary from detected events using Gemini API.
 """
 
 import json
+import re
 from pathlib import Path
 from typing import Optional, List
 from google import genai
@@ -15,7 +16,6 @@ from .models import Commentary, CommentaryOutput
 from ..video.time_utils import parse_time_to_seconds, seconds_to_time, validate_commentary_duration
 from ..context_manager import get_context_manager
 from ..prompts import COMMENTARY_SYSTEM_PROMPT
-from ..utils.rate_limiter import gemini_rate_limiter
 
 # Try to import StateManager, but allow passing it in __init__ if import fails
 try:
@@ -98,6 +98,8 @@ class CommentaryGenerator:
         prompt_parts.append("6. Use player names from match context when available")
         prompt_parts.append("7. COMMENTATOR_1 leads play-by-play, COMMENTATOR_2 adds analysis/excitement")
         prompt_parts.append("")
+        prompt_parts.append("CRITICAL: All timestamps MUST use integer seconds in HH:MM:SS format (e.g., 00:00:42, NOT 00:00:42.5)")
+        prompt_parts.append("")
         prompt_parts.append("Return a JSON object with this structure:")
         prompt_parts.append("""{
   "commentaries": [
@@ -136,9 +138,6 @@ class CommentaryGenerator:
         Returns:
             str: The response text from Gemini
         """
-        # Enforce rate limiting before API call
-        gemini_rate_limiter.wait_if_needed()
-
         print("[COMMENTARY] Calling Gemini API for dual-commentator generation...")
         response = self.client.models.generate_content(
             model="gemini-2.5-flash",
@@ -149,6 +148,55 @@ class CommentaryGenerator:
             )
         )
         return response.text
+
+    def _sanitize_timestamps(self, commentary_data: dict) -> dict:
+        """
+        Sanitize timestamps by rounding fractional seconds to integers.
+
+        Gemini sometimes returns timestamps like "00:00:42.5" despite the pattern constraint.
+        This method normalizes them to "00:00:42" format.
+
+        Args:
+            commentary_data: Raw commentary data from Gemini
+
+        Returns:
+            dict: Commentary data with sanitized timestamps
+        """
+        def sanitize_time(time_str: str) -> str:
+            """Convert HH:MM:SS.s to HH:MM:SS by rounding seconds."""
+            # Match HH:MM:SS or HH:MM:SS.sss
+            match = re.match(r'^(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?$', time_str)
+            if not match:
+                return time_str  # Return as-is if format is unexpected
+
+            hours, minutes, seconds, fractional = match.groups()
+
+            # If no fractional part, return as-is
+            if fractional is None:
+                return time_str
+
+            # Round the seconds (truncate fractional part for simplicity)
+            total_seconds = int(seconds)
+
+            # Return formatted timestamp
+            return f"{hours}:{minutes}:{total_seconds:02d}"
+
+        # Sanitize all commentary timestamps
+        if 'commentaries' in commentary_data:
+            for commentary in commentary_data['commentaries']:
+                if 'start_time' in commentary:
+                    original = commentary['start_time']
+                    commentary['start_time'] = sanitize_time(original)
+                    if original != commentary['start_time']:
+                        print(f"[COMMENTARY] Sanitized start_time: {original} -> {commentary['start_time']}")
+
+                if 'end_time' in commentary:
+                    original = commentary['end_time']
+                    commentary['end_time'] = sanitize_time(original)
+                    if original != commentary['end_time']:
+                        print(f"[COMMENTARY] Sanitized end_time: {original} -> {commentary['end_time']}")
+
+        return commentary_data
 
     async def generate_commentary(
         self,
@@ -187,8 +235,9 @@ class CommentaryGenerator:
             response_text = self._call_gemini_api_with_retry(prompt)
             print(f"[COMMENTARY] Received response: {len(response_text)} characters")
 
-            # Parse JSON and validate with Pydantic
+            # Parse JSON and sanitize timestamps (Gemini sometimes returns decimals)
             commentary_data = json.loads(response_text)
+            commentary_data = self._sanitize_timestamps(commentary_data)
             commentary_output = CommentaryOutput(**commentary_data)
 
             print(f"[COMMENTARY] Generated {len(commentary_output.commentaries)} commentary segments")

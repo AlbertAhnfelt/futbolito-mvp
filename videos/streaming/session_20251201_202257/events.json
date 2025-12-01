@@ -1,0 +1,112 @@
+{
+  "events": [
+    {
+      "time": "00:00:00",
+      "description": "The video opens with a title screen displaying 'FIFA PUSKÁS AWARD 2013' in golden text against a starry black background, setting the context for the clip.",
+      "replay": false,
+      "intensity": 1
+    },
+    {
+      "time": "00:00:02",
+      "description": "Live football match footage begins, showing Sweden (yellow jerseys) against England (white jerseys) in the 90th minute, with the score 3-2 to Sweden. An England player attempts to clear the ball in midfield; it is contested and Sweden gains possession, with several players from both teams converging around the center circle.",
+      "replay": false,
+      "intensity": 3
+    },
+    {
+      "time": "00:00:07",
+      "description": "England goalkeeper Joe Hart (#1) rushes far out of his penalty box towards the right wing to intercept a high ball and attempts to clear it with an overhead header, sending the ball high into the air towards the right flank near the sideline.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:11",
+      "description": "Sweden's Zlatan Ibrahimović (#10) executes an extraordinary acrobatic bicycle kick from approximately 30-35 yards out on the right wing, sending the ball looping high with a perfect arc over the head of the out-of-position England goalkeeper Joe Hart (#1) and a retreating England defender (#5) into the empty net, securing his fourth goal of the match and changing the score to 4-2 to Sweden.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:14",
+      "description": "Following his incredible goal, Zlatan Ibrahimović (#10) celebrates passionately, running towards the fans with his arms raised, then removing his jersey to reveal his tattooed torso while smiling joyfully at the crowd and his teammates who rush to congratulate him.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:20",
+      "description": "A wide-angle replay of the goal shows England goalkeeper Joe Hart (#1) clearing the ball with a header outside the box, followed by Zlatan Ibrahimović (#10) perfectly positioning himself on the right flank to unleash the stunning bicycle kick that arcs precisely over the keeper and into the net.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:26",
+      "description": "A closer replay angle highlights Zlatan Ibrahimović's (#10) incredible athleticism and technical skill as he performs the bicycle kick, with the ball's impressive trajectory clearly visible as it sails over the head of England goalkeeper Joe Hart (#1) and into the goal.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:35",
+      "description": "Zlatan Ibrahimović (#10) of Sweden executes an extraordinary overhead bicycle kick from approximately 25 yards outside the penalty area, launching the ball high towards the goal while facing away from it. England's Cahill (#5) watches the play unfold.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:39",
+      "description": "The ball, struck by Zlatan Ibrahimović's (#10) spectacular bicycle kick, soars majestically over England's goalkeeper (#1) and perfectly dips into the top corner of the net, scoring a truly magnificent and memorable goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:44",
+      "description": "A replay captures Zlatan Ibrahimović (#10) receiving a high pass, controlling it with his chest, then defying gravity to unleash the incredible bicycle kick from just beyond the penalty box, with goalkeeper (#1) left with absolutely no chance to save it.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:53",
+      "description": "Zlatan Ibrahimović (#10), having just scored an unbelievable goal, smiles broadly as he gets up from the ground, turns, and spreads his arms wide in celebration of his phenomenal effort.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:00",
+      "description": "Zlatan Ibrahimović (jersey #10), wearing a yellow national team jersey with blue trim and his name \"IBRAHIMOVIC\" on the back, runs on the football pitch with his arms stretched wide, exuberantly celebrating a goal during his nomination clip for the FIFA Puskás Award 2013.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:03",
+      "description": "Zlatan Ibrahimović (jersey #10) continues his enthusiastic goal celebration by pulling his yellow national team jersey over his head, revealing his back with \"IBRAHIMOVIC\" and the number \"10\", a moment from his FIFA Puskás Award 2013 nominated goal highlight.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:05",
+      "description": "Zlatan Ibrahimović (jersey #10) is depicted shirtless, wearing a blue captain's armband on his right bicep, as he runs and smiles towards the crowd, gesturing during his passionate goal celebration for a FIFA Puskás Award 2013 nominated goal.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:06",
+      "description": "A dynamic group of female players in black football jerseys, including player #9 prominently, are shown embracing each other tightly on the field in a joyous celebration following a goal, presented as a FIFA Puskás Award nomination highlight.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:08",
+      "description": "A male player in a blue football jersey, featuring an \"Office Depot\" sponsor logo, is captured celebrating a goal, possibly kissing his jersey's club badge, while being embraced by a teammate from behind, with a scoreboard displaying \"FUT 3-1\" briefly visible in this Puskás Award nomination clip.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:09",
+      "description": "A female player, wearing a distinctive white and blue striped football jersey with a white collar, makes a heartfelt gesture by forming a 'heart' shape with her hands towards the stands, celebrating a goal in this brief Puskás Award nomination highlight.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:10",
+      "description": "Three male football players, dressed in red jerseys adorned with the \"meo\" sponsor logo, are seen jogging together on the pitch in a coordinated fashion, looking towards the crowd after scoring a goal, featured as a FIFA Puskás Award nomination.",
+      "replay": false,
+      "intensity": 6
+    }
+  ]
+}

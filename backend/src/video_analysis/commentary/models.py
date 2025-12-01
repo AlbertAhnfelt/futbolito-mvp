@@ -16,8 +16,8 @@ class Commentary(BaseModel):
         commentary: The commentary text (max 2.5 words/second)
         speaker: Which commentator is speaking (COMMENTATOR_1 or COMMENTATOR_2)
     """
-    start_time: str = Field(..., description="Start timestamp in HH:MM:SS format")
-    end_time: str = Field(..., description="End timestamp in HH:MM:SS format")
+    start_time: str = Field(..., description="Start timestamp in HH:MM:SS format", pattern=r"^[0-9]{2}:[0-5][0-9]:[0-5][0-9]$")
+    end_time: str = Field(..., description="End timestamp in HH:MM:SS format", pattern=r"^[0-9]{2}:[0-5][0-9]:[0-5][0-9]$")
     commentary: str = Field(..., description="Commentary text")
     speaker: Literal["COMMENTATOR_1", "COMMENTATOR_2"] = Field(
         ..., 
