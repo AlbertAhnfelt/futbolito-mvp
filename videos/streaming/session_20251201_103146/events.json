@@ -1,0 +1,70 @@
+{
+  "events": [
+    {
+      "time": "00:00:07",
+      "description": "Player #10 passes the ball into the penalty box. Player #30 attempts a header toward the goal.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:08",
+      "description": "Bastian Schweinsteiger scores with a header into the right side of the goal. Crowd cheers. Rafinha (13) celebrates with Schweinsteiger.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:23",
+      "description": "A replay of the celebration by Bastian Schweinsteiger after the goal. The crowd continues to cheer loudly.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:27",
+      "description": "Bayern Munich players including Arjen Robben (#10), and Bastian Schweinsteiger celebrate together after the goal, hugging and patting each other on the back.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:30",
+      "description": "Two coaches are watching the game from the bench. Coach Pep Guardiola is standing and discussing the game with another coach sitting by him.",
+      "replay": false,
+      "intensity": 2
+    },
+    {
+      "time": "00:00:34",
+      "description": "Bastian Schweinsteiger along with David Alaba and Mario Mandzukic celebrate a goal. David Alaba raises his hand to celebrate while Bastian Schweinsteiger and Mario Mandzukic hug him.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:40",
+      "description": "Bayern Munich is on the attack. Player #7 dribbles past multiple Manchester United defenders. Arjen Robben takes a shot from just inside the penalty box, but it's saved by the Manchester United goalkeeper David de Gea .",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:51",
+      "description": "Replay of a shot by Arjen Robben saved by Manchester United goalkeeper David de Gea .",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:57",
+      "description": "Marouane Fellaini heads a ball away from the Bayern Munich attack.",
+      "replay": false,
+      "intensity": 5
+    },
+    {
+      "time": "00:01:19",
+      "description": "Player #31 heads the ball towards the goal inside the penalty box. The goalkeeper dives to his right and attempts to save the ball, but the ball goes into the net.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:19",
+      "description": "Replay of various football-related highlights and promotions including 'GREAT GOALS', 'CLASSIC MATCHES', 'LEGENDARY PLAYERS', 'STAR CHALLENGES', 'BEHIND THE SCENES' and the URL 'More From UEFA.tv'.",
+      "replay": true,
+      "intensity": 5
+    }
+  ]
+}

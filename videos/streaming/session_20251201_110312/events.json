@@ -1,0 +1,184 @@
+{
+  "events": [
+    {
+      "time": "00:00:29",
+      "description": "Robert Lewandowski (9) enters the game as a halftime substitution.",
+      "replay": false,
+      "intensity": 3
+    },
+    {
+      "time": "00:00:29",
+      "description": "Robert Lewandowski (9) makes a run on the left side of the field.",
+      "replay": false,
+      "intensity": 4
+    },
+    {
+      "time": "00:00:29",
+      "description": "Dante misses a pass, leading to a Bayern Munich attack. Vidal plays the ball into the box towards Thomas Muller.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:29",
+      "description": "Robert Lewandowski (9) scores a goal inside the penalty box after a scramble, sending a close range shot into the back of the net.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:59",
+      "description": "Bayern players celebrate the goal as the home crowd cheers loudly. Wolfsburg's Dante (#31) shakes his head in disappointment. Pep Guardiola passes on instructions to Boateng.  ",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:47",
+      "description": "Götze (#19) receives the ball and performs an exquisite back heel pass to Müller inside the penalty box. Lewandowski (#9) finishes the play with a shot.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:57",
+      "description": "Replay of the back heel pass from Götze (#19) to Müller followed by the shot and goal from Lewandowski (#9) in the penalty box. ",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:29",
+      "description": "The Bayern München player shoots the ball towards the goal; VfL Wolfsburg goalkeeper Diego Benaglio dives to his right in an attempt to block the shot, the ball deflects off of Diego Benaglio's hands into the goal.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:29",
+      "description": "Replay of the goal from behind the goal with Diego Benaglio (#1) diving, Lewandowski standing near the goal looking for the shot.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:13",
+      "description": "Replay of the goal from a front angle view focusing on Lewandowski and the bundesliga replay effect transition. ",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:01:20",
+      "description": "Robert Lewandowski (#9) from Bayern München shoots the ball from outside of the penalty box into the goal; The goalkeeper is unable to block the shot.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:01:27",
+      "description": "Bayern München coach Pep Guardiola is shown celebrating from the sidelines.",
+      "replay": false,
+      "intensity": 5
+    },
+    {
+      "time": "00:01:30",
+      "description": "The camera focuses on a player in a white and green jersey.",
+      "replay": false,
+      "intensity": 3
+    },
+    {
+      "time": "00:01:32",
+      "description": "The crowd cheers and celebrates, their arms raised in the air behind a fence.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:35",
+      "description": "Players in red jerseys celebrate, embracing each other closely.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:40",
+      "description": "The Bundesliga logo appears on the screen.",
+      "replay": false,
+      "intensity": 5
+    },
+    {
+      "time": "00:01:42",
+      "description": "Overview of the soccer field, where players from both teams are positioned and preparing for play.",
+      "replay": false,
+      "intensity": 4
+    },
+    {
+      "time": "00:01:47",
+      "description": "Lewandowski passes the ball down the field, leading to a goal opportunity.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:01:50",
+      "description": "The camera shows the goalkeeper failing to prevent the ball from entering the net.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:52",
+      "description": "Goal action, replay of the ball trajectory from the player's perspective.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:55",
+      "description": "The camera focuses on a replay of the goal attempt, with the player shooting from the ground to score.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:02:29",
+      "description": "Player #9 from Bayern Munich kicks the ball into the goal from inside the penalty box, with the goalkeeper unable to save it. Players #22 and #4 from the opposing team are nearby, but fail to stop the shot.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:02:29",
+      "description": "Replay of the goal, showing the ball being kicked with power and precision past the goalkeeper. The stadium crowd is visible in the background, celebrating the goal.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:02:29",
+      "description": "The game resumes with Bayern Munich's Player #9 standing near the center circle, ready to restart the match. Several players from both teams are positioned around the field.",
+      "replay": false,
+      "intensity": 3
+    },
+    {
+      "time": "00:02:59",
+      "description": "The ball is played to Player #10 inside the box, who passes it to Player #23, who then passes it to Player #14 near the center circle.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:02:59",
+      "description": "Player #14 dribbles towards the center circle, then passes the ball to Player #23 who passes back to him, but an opposing player intercepts it.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:03:29",
+      "description": "Player in green jersey is tackled by Player #23 in red jersey, but the tackle is unsuccessful and the ball goes to another Player in red jersey.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:03:29",
+      "description": "Player #23 in red jersey dribbles the ball towards the goal, with a Player in green jersey chasing behind him.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:03:29",
+      "description": "Player #7 in green jersey receives a pass inside the box, then takes a shot, but the goalkeeper saves it and the ball goes out of bounds.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:03:29",
+      "description": "The goalkeeper makes a pass towards Player #27 in red jersey.",
+      "replay": false,
+      "intensity": 5
+    }
+  ]
+}
