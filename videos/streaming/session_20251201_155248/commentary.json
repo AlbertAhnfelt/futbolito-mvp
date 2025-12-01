@@ -1,0 +1,64 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:00",
+      "end_time": "00:00:05",
+      "commentary": "We are underway!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:06",
+      "end_time": "00:00:10",
+      "commentary": "Robben sends a fierce cross! It's blocked by the defense!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:11",
+      "end_time": "00:00:15",
+      "commentary": "Schweinsteiger pounces! He fires it in! GOAL! What a finish!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:16",
+      "end_time": "00:00:20",
+      "commentary": "What a finish! Crucial goal! Pure joy from Schweinsteiger!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:21",
+      "end_time": "00:00:26",
+      "commentary": "Rafinha and teammates embrace. Celebrating with the passionate crowd. A huge goal!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:27",
+      "end_time": "00:00:33",
+      "commentary": "The stadium erupts! What a moment. This goal could be a massive turning point.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:01",
+      "end_time": "00:01:05",
+      "commentary": "Player 31 with a powerful right-footed strike! It's a GOAL!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:06",
+      "end_time": "00:01:11",
+      "commentary": "What a goal! Pure power and placement. No chance for the keeper.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:12",
+      "end_time": "00:01:16",
+      "commentary": "Player 31! Unstoppable shot into the top left corner!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:17",
+      "end_time": "00:01:20",
+      "commentary": "Stunning finish! No stopping that.",
+      "speaker": "COMMENTATOR_2"
+    }
+  ]
+}

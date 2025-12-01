@@ -1,0 +1,106 @@
+{
+  "events": [
+    {
+      "time": "00:00:01",
+      "description": "Live play initiates with Arjen Robben (#10), distinguishable by his bald head, receiving the ball in the attacking midfield area on the right side. He begins a dribbling run down the right flank, advancing purposefully towards the opposition's penalty box while defenders from the red team track his movement.",
+      "replay": false,
+      "intensity": 4
+    },
+    {
+      "time": "00:00:08",
+      "description": "Arjen Robben (#10) delivers a powerful, driven cross from a wide position on the right wing, just outside the penalty area, sending the ball low and fast into the crowded opposition 6-yard box, aiming for his teammates making runs.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:09",
+      "description": "Following Robben's cross, an attacking player in a blue jersey attempts a shot on target from a central position inside the penalty area, but the effort is swiftly blocked by a sliding defender in a red kit, causing the ball to rebound into the path of another attacking player.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:11",
+      "description": "Bastian Schweinsteiger (#31) swiftly collects the deflected ball near the penalty spot and, with a powerful, decisive low right-footed shot, strikes it cleanly into the bottom left corner of the goal, past the outstretched arms of the goalkeeper, securing a crucial goal for his team.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:12",
+      "description": "Immediately after scoring, Bastian Schweinsteiger (#31) turns and runs towards the sideline, pumping his fists in the air and showing visible elation, initiating his goal celebration with his face displaying pure joy and excitement.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:16",
+      "description": "Rafinha (#13), a teammate, rushes to embrace Bastian Schweinsteiger (#31) near the corner flag, wrapping his arms around the goalscorer as they share a moment of intense celebration, with other teammates converging around them.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:19",
+      "description": "Bastian Schweinsteiger (#31) and Rafinha (#13) continue their celebration, standing side-by-side with arms raised towards the passionate crowd, acknowledging the fans' cheers and the significance of the recently scored goal.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:23",
+      "description": "The camera pans to a wide view of the stadium stands, showing a large section of the crowd, predominantly in red, vigorously celebrating the goal, with numerous fans jumping, waving scarves, and clapping enthusiastically in unison.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:27",
+      "description": "Bastian Schweinsteiger (#31), Rafinha (#13), Arjen Robben (#10), and other teammates gather in a celebratory group huddle, embracing each other with smiles and pats on the back, sharing the collective triumph and camaraderie after scoring the goal.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:31",
+      "description": "Bayern Munich head coach Pep Guardiola (dressed in a suit) and an assistant coach are shown on the sidelines of the pitch. The assistant coach covers his mouth with his hand, reflecting intense concentration or concern during the live match action.",
+      "replay": false,
+      "intensity": 3
+    },
+    {
+      "time": "00:00:37",
+      "description": "Bayern Munich players, including Bastian Schweinsteiger (#31), David Alaba (#27), and Mario Mandžukić (#9), are seen in a huddle, celebrating vigorously on the field. They are hugging and patting each other's heads, indicating a recent significant positive outcome like a goal or crucial play.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:40",
+      "description": "The game is in live action, a wide shot capturing play in the midfield. A Bayern Munich player in a dark blue kit maintains possession and passes the ball forward from the central midfield area, initiating an attack against the Manchester United defense.",
+      "replay": false,
+      "intensity": 4
+    },
+    {
+      "time": "00:00:47",
+      "description": "Bayern Munich's Franck Ribéry (#7) receives the ball on the left side of the opponent's penalty area. He dribbles briefly, cutting inside towards the center, before delivering a precise short pass with his right foot to Bastian Schweinsteiger (#31) positioned near the penalty spot.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:49",
+      "description": "Bastian Schweinsteiger (#31) takes one touch after receiving the pass from Franck Ribéry, then unleashes a powerful right-footed low drive from just inside the penalty area. The shot travels swiftly past the diving Manchester United goalkeeper David de Gea (#1) and into the bottom corner of the net, resulting in a goal for Bayern Munich.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:51",
+      "description": "A replay of the goal begins, showing the sequence from a high angle. Franck Ribéry (#7) makes the assist to Bastian Schweinsteiger (#31), who then executes the shot that finds the back of the net. The replay offers a comprehensive view of the attacking movement and goal.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:55",
+      "description": "Another replay angle of the goal highlights Bastian Schweinsteiger's (#31) impactful right-footed low strike. The ball's trajectory is clearly visible as it evades Manchester United goalkeeper David de Gea (#1). German on-screen text explicitly confirms \"Tor von FC Bayern\" (Goal by FC Bayern).",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:02",
+      "description": "Player #31, wearing a dark blue and red kit, scores a goal from very close range, just inside the six-yard box near the left post. He strikes the ball with his right foot, sending it powerfully into the top left corner of the net, beyond the desperate dive of the opposing goalkeeper in the green jersey. Player #4, in a red jersey, is also in the penalty area witnessing the goal.",
+      "replay": false,
+      "intensity": 9
+    }
+  ]
+}

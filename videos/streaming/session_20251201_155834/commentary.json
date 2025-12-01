@@ -1,0 +1,40 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:30",
+      "end_time": "00:00:35",
+      "commentary": "The tension is visible on the sidelines.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:36",
+      "end_time": "00:00:42",
+      "commentary": "That intensity is palpable. Schweinsteiger, Alaba, Mandžukić, all feeling the moment, reacting.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:47",
+      "end_time": "00:00:51",
+      "commentary": "Ribéry! Dribbles inside...",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:52",
+      "end_time": "00:00:58",
+      "commentary": "Unbelievable finish from Franck Ribéry! Absolutely pinpoint accuracy into the bottom corner. What a moment!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:59",
+      "end_time": "00:01:05",
+      "commentary": "Looking at the replay, that left-footed strike from Ribéry was simply unstoppable.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:06",
+      "end_time": "00:01:13",
+      "commentary": "And you see the pure frustration on Marouane Fellaini's face there.",
+      "speaker": "COMMENTATOR_2"
+    }
+  ]
+}

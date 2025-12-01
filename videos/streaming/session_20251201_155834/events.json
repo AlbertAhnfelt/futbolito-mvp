@@ -1,0 +1,94 @@
+{
+  "events": [
+    {
+      "time": "00:00:01",
+      "description": "Live action begins with Bayern Munich player #10 (Arjen Robben) receiving the ball and dribbling into the attacking third, moving towards the right side of the field while being pressured by multiple Manchester United defenders.",
+      "replay": false,
+      "intensity": 5
+    },
+    {
+      "time": "00:00:05",
+      "description": "Bayern Munich player #10 (Arjen Robben) executes a precise short pass to teammate #13 (Rafinha) who is positioned on the right wing, just outside the penalty area, initiating a dangerous attacking play.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:07",
+      "description": "Bayern Munich player #13 (Rafinha) attempts to deliver a low cross from the right side of the penalty box into the center, but the ball is intercepted and blocked by Manchester United defender #4, deflecting into the crowded penalty area.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:11",
+      "description": "GOAL! Bayern Munich player #31 (Bastian Schweinsteiger) powerfully strikes the deflected ball with his right foot from inside the penalty box, sending a clinical shot past the diving Manchester United goalkeeper into the top left corner of the net.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:13",
+      "description": "Bayern Munich goal scorer Bastian Schweinsteiger (#31) celebrates emphatically by pumping his fists and embracing teammate Rafinha (#13) near the sideline, showing strong emotion after scoring.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:23",
+      "description": "The Bayern Munich crowd erupts in jubilant celebration, with fans in the stands waving their arms, cheering loudly, and displaying collective excitement following their team's goal.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:27",
+      "description": "Bayern Munich players, including Bastian Schweinsteiger (#31), Arjen Robben (#10), and Rafinha (#13), gather in a close huddle on the field, embracing each other in a passionate team celebration of the goal.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:30",
+      "description": "Bayern Munich coach Pep Guardiola and an assistant coach are observed intently from the sideline, with the assistant covering his mouth in an anxious gesture, indicating a tense moment in the match.",
+      "replay": false,
+      "intensity": 3
+    },
+    {
+      "time": "00:00:34",
+      "description": "Bayern Munich players, including Bastian Schweinsteiger (#31), David Alaba (#27), and Mario Mandžukić (#9), are seen on the field reacting to a play, with Alaba raising his hand towards the crowd.",
+      "replay": false,
+      "intensity": 4
+    },
+    {
+      "time": "00:00:49",
+      "description": "Franck Ribéry (#7) of Bayern Munich receives the ball on the left side of the penalty area, dribbles past a defender, and unleashes a precise low, left-footed shot towards the bottom right corner of the goal, beating the diving Manchester United goalkeeper and scoring a goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:50",
+      "description": "A replay from an elevated angle shows Franck Ribéry (#7) executing his left-footed shot from inside the box, with the ball cleanly striking the back of the net past the outstretched arms of the Manchester United goalkeeper.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:53",
+      "description": "A close-up replay confirms Franck Ribéry's (#7) goal, showcasing the power and accuracy of his left-footed strike into the bottom corner. On-screen text appears, stating 'Neue Spielstand. Tor von FC Bayern.' (New score. Goal by FC Bayern.)",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:56",
+      "description": "A replay from behind the goal provides a clear view of the ball in the net after Franck Ribéry's (#7) goal. Manchester United player Marouane Fellaini (#31) is seen looking dejected near the goal line.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:00",
+      "description": "Player #31, positioned extremely close to the goal, attempts a powerful header or a close-range shot, directing the ball towards the upper left corner of the net. Goalkeeper #1 makes a full-stretch diving effort to his right, but the ball crucially strikes the crossbar and deflects out of play, narrowly missing a goal. Player #7 is also present inside the penalty box.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:01",
+      "description": "A slow-motion replay from a different angle confirms Player #31's header or shot attempt, showing the ball's trajectory as it impacts the crossbar with significant force before deflecting away. The replay clearly illustrates the Goalkeeper #1's desperate diving save attempt.",
+      "replay": true,
+      "intensity": 8
+    }
+  ]
+}

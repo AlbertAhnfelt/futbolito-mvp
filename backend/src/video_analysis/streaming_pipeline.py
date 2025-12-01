@@ -63,10 +63,7 @@ class StreamingPipeline:
         self.video_processor = VideoProcessor()
 
         if elevenlabs_api_key:
-            self.tts_generator = TTSGenerator(
-                api_key=elevenlabs_api_key,
-                default_voice_id="nrD2uNU2IUYtedZegcGx"
-            )
+            self.tts_generator = TTSGenerator(api_key=elevenlabs_api_key)
         else:
             self.tts_generator = None
 
@@ -589,7 +586,8 @@ class StreamingPipeline:
             # Generate audio (run in thread to avoid blocking)
             audio_base64 = await asyncio.to_thread(
                 self.tts_generator.generate_audio,
-                commentary.commentary
+                commentary.commentary,
+                commentary.speaker
             )
 
             if audio_base64:

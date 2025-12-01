@@ -19,13 +19,13 @@ class TTSGenerator:
     # Default voice mappings for commentators
     DEFAULT_VOICES = {
         "COMMENTATOR_1": "nrD2uNU2IUYtedZegcGx",  # Lead commentator voice
-        "COMMENTATOR_2": "pNInz6obpgDQGcFmaJgB",  # Analyst commentator voice
+        "COMMENTATOR_2": "ZF6FPAbjXT4488VcRRnw",  # Analyst commentator voice
     }
     
     def __init__(
         self, 
         api_key: str, 
-        voice_mapping: Optional[Dict[str, str]] = None
+        voice_mapping: Optional[Dict[str, str]] = DEFAULT_VOICES
     ):
         """
         Initialize TTS generator with dual voice support.
