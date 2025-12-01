@@ -4,7 +4,6 @@ Generates football commentary from detected events using Gemini API.
 """
 
 import json
-import re
 from pathlib import Path
 from typing import Optional, List
 from google import genai
@@ -13,11 +12,15 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from google.api_core.exceptions import ResourceExhausted
 
 from .models import Commentary, CommentaryOutput
-from ..video.time_utils import parse_time_to_seconds, seconds_to_time, validate_commentary_duration
+from ..video.time_utils import parse_time_to_seconds, seconds_to_time
 from ..context_manager import get_context_manager
-from ..prompts import COMMENTARY_SYSTEM_PROMPT
+from ..prompts import (
+    COMMENTARY_SYSTEM_PROMPT1,
+    COMMENTARY_SYSTEM_PROMPT2,
+    COMMENTARY_SYSTEM_CORE,
+)
+from ..utils.rate_limiter import gemini_rate_limiter
 
-# Try to import StateManager, but allow passing it in __init__ if import fails
 try:
     from ..state_manager import StateManager
 except ImportError:
@@ -26,50 +29,26 @@ except ImportError:
 
 class CommentaryGenerator:
     """
-    Generates football commentary from detected events using Gemini API.
-    
-    Creates dual-commentator dialogue with proper speaker identification,
-    timing, gaps, and word limits.
+    Generates football commentary using TRUE tiki-taka style:
+    COMMENTATOR_1 (play-by-play) → COMMENTATOR_2 (analysis) for each event.
     """
 
-    def __init__(self, api_key: str, state_manager=None, output_dir: Optional[Path] = None):
-        """
-        Initialize commentary generator.
+    MIN_GAP = 0.5
+    MAX_GAP = 2.0
+    MIN_DURATION = 3
+    MAX_DURATION = 15
 
-        Args:
-            api_key: Gemini API key
-            state_manager: StateManager instance for async-safe state updates (REQUIRED)
-            output_dir: Directory to save commentary.json (default: output/)
-        """
+    def __init__(self, api_key: str, state_manager=None, output_dir: Optional[Path] = None):
         self.client = genai.Client(api_key=api_key)
         self.context_manager = get_context_manager()
-
-        # StateManager is the PRIMARY state management system
         self.state_manager = state_manager
 
-        if self.state_manager is None:
-            print("[COMMENTARY GENERATOR WARN] No StateManager provided. Commentary will work, but state won't be persisted properly.")
-
-        # Output directory for backwards compatibility
         if output_dir is None:
             output_dir = Path("output")
 
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
-        self.commentary_file = self.output_dir / 'commentary.json'
-
-    def _build_prompt(self, events: list, video_duration: float) -> str:
-        """
-        Build the prompt for dual-commentator commentary generation.
-
-        Args:
-            events: List of event dictionaries
-            video_duration: Total video duration in seconds
-
-        Returns:
-            Complete prompt string
-        """
-        prompt_parts = []
+        self.commentary_file = self.output_dir / "commentary.json"
 
         # Add match context if available
         context_text = self.context_manager.format_for_prompt()
@@ -125,78 +104,67 @@ class CommentaryGenerator:
         wait=wait_exponential(multiplier=2, min=4, max=60),
         stop=stop_after_attempt(5)
     )
-    def _call_gemini_api_with_retry(self, prompt: str) -> str:
-        """
-        Call Gemini API with retry logic for quota exhaustion errors.
+    def _call_llm(self, system_prompt: str, user_prompt: str) -> str:
+        """Call Gemini for one commentator's line."""
+        gemini_rate_limiter.wait_if_needed()
 
-        Implements exponential backoff: 4s -> 8s -> 16s -> 32s -> 60s
-        Max 5 attempts before giving up.
-
-        Args:
-            prompt: The prompt string to send to Gemini
-
-        Returns:
-            str: The response text from Gemini
-        """
-        print("[COMMENTARY] Calling Gemini API for dual-commentator generation...")
         response = self.client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=prompt,
+            contents=user_prompt,
             config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=CommentaryOutput.model_json_schema()
+                system_instruction=system_prompt,
+                response_mime_type="text/plain"
             )
         )
-        return response.text
+        return response.text.strip()
 
-    def _sanitize_timestamps(self, commentary_data: dict) -> dict:
-        """
-        Sanitize timestamps by rounding fractional seconds to integers.
+    # ==========================================
+    # TIKI-TAKA COMMENTARY GENERATION
+    # ==========================================
 
-        Gemini sometimes returns timestamps like "00:00:42.5" despite the pattern constraint.
-        This method normalizes them to "00:00:42" format.
+    async def generate_commentary(
+        self,
+        events: list,
+        video_duration: float,
+        use_streaming: bool = False
+    ) -> List[Commentary]:
 
-        Args:
-            commentary_data: Raw commentary data from Gemini
+        print("\n============================================")
+        print("TIKI-TAKA COMMENTARY GENERATION STARTED")
+        print("============================================")
 
-        Returns:
-            dict: Commentary data with sanitized timestamps
-        """
-        def sanitize_time(time_str: str) -> str:
-            """Convert HH:MM:SS.s to HH:MM:SS by rounding seconds."""
-            # Match HH:MM:SS or HH:MM:SS.sss
-            match = re.match(r'^(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?$', time_str)
-            if not match:
-                return time_str  # Return as-is if format is unexpected
+        time_cursor = 0.0
+        final_segments = []
 
-            hours, minutes, seconds, fractional = match.groups()
+        context_text = self.context_manager.format_for_prompt()
 
-            # If no fractional part, return as-is
-            if fractional is None:
-                return time_str
+        for event in events:
+            event_time = parse_time_to_seconds(event["time"])
+            intensity = event.get("intensity", 5)
 
-            # Round the seconds (truncate fractional part for simplicity)
-            total_seconds = int(seconds)
+            # Ensure minimum gap
+            if final_segments:
+                last_end = parse_time_to_seconds(final_segments[-1]["end_time"])
+                gap = event_time - last_end
+                if gap < self.MIN_GAP:
+                    event_time = last_end + self.MIN_GAP
 
-            # Return formatted timestamp
-            return f"{hours}:{minutes}:{total_seconds:02d}"
+            # -------------------------------------------------
+            # 1) Generate COMMENTATOR_1 line
+            # -------------------------------------------------
 
-        # Sanitize all commentary timestamps
-        if 'commentaries' in commentary_data:
-            for commentary in commentary_data['commentaries']:
-                if 'start_time' in commentary:
-                    original = commentary['start_time']
-                    commentary['start_time'] = sanitize_time(original)
-                    if original != commentary['start_time']:
-                        print(f"[COMMENTARY] Sanitized start_time: {original} -> {commentary['start_time']}")
+            c1_user_prompt = f"""
+Match Context:
+{context_text}
 
-                if 'end_time' in commentary:
-                    original = commentary['end_time']
-                    commentary['end_time'] = sanitize_time(original)
-                    if original != commentary['end_time']:
-                        print(f"[COMMENTARY] Sanitized end_time: {original} -> {commentary['end_time']}")
+Event:
+{json.dumps(event, indent=2)}
 
-        return commentary_data
+Generate ONE commentary segment for COMMENTATOR_1.
+It must be {self.MIN_DURATION}-{self.MAX_DURATION} seconds long.
+Start time MUST be based on:
+{seconds_to_time(event_time)}
+"""
 
     async def generate_commentary(
         self,
@@ -356,41 +324,26 @@ class CommentaryGenerator:
             commentaries: List of Commentary objects to save
         """
         if self.state_manager:
-            try:
-                # Convert Commentary objects to dicts
-                commentary_dicts = [c.model_dump() for c in commentaries]
-                # Save through StateManager (which handles file I/O)
-                await self.state_manager.add_commentaries(commentary_dicts)
-                print(f"[COMMENTARY] Saved {len(commentaries)} commentaries to StateManager")
-            except Exception as e:
-                print(f"[COMMENTARY ERROR] Failed to save commentaries to StateManager: {e}")
-                import traceback
-                traceback.print_exc()
+            await self.state_manager.add_commentaries(commentaries)
+            print(f"[COMMENTARY] Saved {len(commentaries)} commentary segments.")
         else:
-            print(f"[COMMENTARY ERROR] No StateManager provided. Commentaries will NOT be saved!")
-            print(f"[COMMENTARY ERROR] Lost {len(commentaries)} commentaries!")
+            print("[COMMENTARY WARNING] No StateManager provided.")
+
+    # ==========================================
+    # LOAD & CLEAR
+    # ==========================================
 
     def load_commentaries(self) -> List[Commentary]:
-        """
-        Load commentaries from commentary.json file.
-
-        Returns:
-            List of Commentary objects with speaker identification
-
-        Raises:
-            FileNotFoundError: If commentary.json doesn't exist
-        """
         if not self.commentary_file.exists():
             raise FileNotFoundError(f"Commentary file not found: {self.commentary_file}")
 
-        with open(self.commentary_file, 'r', encoding='utf-8') as f:
+        with open(self.commentary_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         commentary_output = CommentaryOutput(**data)
         return commentary_output.commentaries
 
     def clear_commentaries(self) -> None:
-        """Clear commentary.json file (reset to empty)."""
         if self.commentary_file.exists():
             self.commentary_file.unlink()
             print(f"[COMMENTARY] Cleared commentary file: {self.commentary_file}")
