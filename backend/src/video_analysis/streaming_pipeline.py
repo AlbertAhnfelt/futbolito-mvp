@@ -74,6 +74,9 @@ class StreamingPipeline:
         self.video_duration = 0.0
         self.clips = []
         self.clip_file_uris = []
+        
+        # TTS concurrency limit (ElevenLabs allows max 3 concurrent requests)
+        self.tts_semaphore = asyncio.Semaphore(3)
 
     async def _upload_clip(self, client, clip, clip_index: int, total_clips: int) -> str:
         """
@@ -121,6 +124,55 @@ class StreamingPipeline:
         
         print(f"[UPLOAD] ✓ Clip {clip_index + 1}/{total_clips} ready: {uploaded_file.uri}")
         return uploaded_file.uri
+
+    async def _upload_and_process_segment(
+        self,
+        client,
+        clip,
+        segment_index: int,
+        total_segments: int,
+        video_path_with_audio: Path,
+        streaming_dir: Path
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Complete pipeline for ONE segment: upload + process + return chunk data.
+        
+        This method enables FULL PARALLELISM - multiple segments can be processed
+        simultaneously by running this as asyncio.create_task() for each segment.
+        
+        Args:
+            client: Gemini API client
+            clip: VideoClip object to process
+            segment_index: Index of this segment (0-based)
+            total_segments: Total number of segments
+            video_path_with_audio: Path to full video with audio
+            streaming_dir: Directory to save chunks
+            
+        Returns:
+            Chunk data dict or None if failed
+        """
+        print(f"\n[PARALLEL] Segment {segment_index + 1}/{total_segments} - Starting upload + processing")
+        
+        # Step 1: Upload this clip
+        file_uri = await self._upload_clip(client, clip, segment_index, total_segments)
+        
+        # Step 2: Process this segment completely (events, commentary, TTS, chunk)
+        print(f"[PARALLEL] Segment {segment_index + 1}/{total_segments} - Upload done, starting processing")
+        chunk_data = await self._process_segment_and_emit(
+            clip=clip,
+            file_uri=file_uri,
+            segment_index=segment_index,
+            total_segments=total_segments,
+            video_path_with_audio=video_path_with_audio,
+            streaming_dir=streaming_dir
+        )
+        
+        if chunk_data:
+            print(f"[PARALLEL] ✓ Segment {segment_index + 1}/{total_segments} - COMPLETE!")
+        else:
+            print(f"[PARALLEL] ✗ Segment {segment_index + 1}/{total_segments} - FAILED")
+        
+        return chunk_data
 
     async def process_video_stream(
         self,
@@ -204,60 +256,76 @@ class StreamingPipeline:
                 interval_seconds=30
             )
 
-            # Step 3 & 4: PARALLEL UPLOAD + PIPELINED PROCESSING
-            # Start ALL uploads in parallel, process segments as soon as their upload completes
-            # This significantly reduces time-to-first-chunk
+            # Step 3 & 4: PRIORITIZED PIPELINED PROCESSING
+            # - Upload ALL clips in parallel (fast)
+            # - Process segments SEQUENTIALLY (guarantees segment 1 finishes first)
+            # - User starts watching segment 1 while segments 2 & 3 process
             
             yield {
                 'type': 'status',
-                'message': f'Starting parallel upload of {len(self.clips)} segments...',
+                'message': f'Uploading {len(self.clips)} segments in parallel...',
                 'progress': 15
             }
 
             client = genai.Client(api_key=self.api_key)
             total_segments = len(self.clips)
             
+            # Setup streaming directory
+            streaming_dir = videos_dir / 'streaming' / self.session_id
+            streaming_dir.mkdir(exist_ok=True, parents=True)
+            
             print(f"\n{'='*60}")
-            print(f"[PARALLEL PIPELINE] Starting {total_segments} parallel uploads")
+            print(f"[PRIORITIZED PIPELINE] Uploading {total_segments} clips in parallel")
             print(f"{'='*60}\n")
             
-            # Start ALL uploads in parallel as background tasks
+            # Step 3a: Upload ALL clips in parallel (fast - ~10s total)
             upload_tasks = {}
             for i, clip in enumerate(self.clips):
                 upload_tasks[i] = asyncio.create_task(
                     self._upload_clip(client, clip, i, total_segments)
                 )
             
-            # Setup for processing
-            streaming_dir = videos_dir / 'streaming' / self.session_id
-            streaming_dir.mkdir(exist_ok=True, parents=True)
-            chunk_index = 0
-            
-            # Process segments IN ORDER, but start processing as soon as upload is ready
-            # While segment N is processing, segments N+1, N+2, etc. continue uploading
-            for i, clip in enumerate(self.clips):
-                # Wait for THIS segment's upload to complete (others continue in parallel)
-                print(f"[PIPELINE] Waiting for segment {i + 1} upload...")
-                file_uri = await upload_tasks[i]
-                
+            # Wait for all uploads to complete
+            file_uris = {}
+            for i in range(total_segments):
+                file_uris[i] = await upload_tasks[i]
                 yield {
                     'type': 'status',
-                    'message': f'Processing segment {i + 1}/{total_segments}...',
-                    'progress': 15 + int((i / total_segments) * 80)
+                    'message': f'Uploaded segment {i + 1}/{total_segments}',
+                    'progress': 15 + int(((i + 1) / total_segments) * 10)
+                }
+            
+            print(f"\n{'='*60}")
+            print(f"[SEQUENTIAL-FIRST] All uploads done!")
+            print(f"[SEQUENTIAL-FIRST] Processing segment 1 FIRST for immediate playback")
+            print(f"[SEQUENTIAL-FIRST] Then parallelizing remaining segments while user watches")
+            print(f"{'='*60}\n")
+            
+            # Step 3b: SEQUENTIAL-FIRST PROCESSING
+            # Process segment 1 COMPLETELY first so user can start watching immediately
+            # Then process remaining segments in parallel while user watches segment 1 (~30s)
+            
+            chunk_index = 0
+            
+            # STEP 1: Process segment 1 FIRST (user gets to watch immediately)
+            if total_segments > 0:
+                yield {
+                    'type': 'status',
+                    'message': 'Processing segment 1 for immediate playback...',
+                    'progress': 30
                 }
                 
-                # Process this segment (other uploads continue in background)
-                print(f"[PIPELINE] Processing segment {i + 1} while other uploads continue...")
+                print(f"[SEQUENTIAL-FIRST] Processing segment 1/{total_segments}...")
                 chunk_data = await self._process_segment_and_emit(
-                    clip=clip,
-                    file_uri=file_uri,
-                    segment_index=i,
+                    clip=self.clips[0],
+                    file_uri=file_uris[0],
+                    segment_index=0,
                     total_segments=total_segments,
                     video_path_with_audio=video_path_with_audio,
                     streaming_dir=streaming_dir
                 )
                 
-                # EMIT chunk immediately so frontend can start playing
+                # EMIT segment 1 immediately - user starts watching NOW!
                 if chunk_data:
                     yield {
                         'type': 'chunk_ready',
@@ -265,10 +333,62 @@ class StreamingPipeline:
                         'url': chunk_data['url'],
                         'start_time': chunk_data['start_time'],
                         'end_time': chunk_data['end_time'],
-                        'progress': 15 + int(((i + 1) / total_segments) * 80)
+                        'progress': 50
                     }
                     chunk_index += 1
-                    print(f"[PARALLEL PIPELINE] ✓ Segment {i + 1} EMITTED - user can watch now!")
+                    print(f"[SEQUENTIAL-FIRST] ✓ Segment 1 EMITTED - user watching now!")
+                    print(f"[SEQUENTIAL-FIRST] User has ~30s while we process remaining segments")
+            
+            # STEP 2: Process remaining segments IN PARALLEL (user is watching segment 1)
+            if total_segments > 1:
+                yield {
+                    'type': 'status',
+                    'message': f'Processing segments 2-{total_segments} in parallel...',
+                    'progress': 55
+                }
+                
+                print(f"\n[SEQUENTIAL-FIRST] Starting parallel processing of segments 2-{total_segments}...")
+                
+                # Create tasks for remaining segments (all at once)
+                remaining_tasks = []
+                for i in range(1, total_segments):
+                    print(f"[SEQUENTIAL-FIRST] Queueing segment {i + 1}/{total_segments}...")
+                    remaining_tasks.append(
+                        asyncio.create_task(
+                            self._process_segment_and_emit(
+                                clip=self.clips[i],
+                                file_uri=file_uris[i],
+                                segment_index=i,
+                                total_segments=total_segments,
+                                video_path_with_audio=video_path_with_audio,
+                                streaming_dir=streaming_dir
+                            )
+                        )
+                    )
+                
+                # Emit remaining chunks IN ORDER as they complete
+                for i, task in enumerate(remaining_tasks):
+                    segment_num = i + 2  # Segments 2, 3, ...
+                    yield {
+                        'type': 'status',
+                        'message': f'Waiting for segment {segment_num}/{total_segments}...',
+                        'progress': 55 + int(((i + 1) / len(remaining_tasks)) * 40)
+                    }
+                    
+                    # Wait for this segment's chunk
+                    chunk_data = await task
+                    
+                    if chunk_data:
+                        yield {
+                            'type': 'chunk_ready',
+                            'index': chunk_data['index'],
+                            'url': chunk_data['url'],
+                            'start_time': chunk_data['start_time'],
+                            'end_time': chunk_data['end_time'],
+                            'progress': 55 + int(((i + 2) / len(remaining_tasks)) * 40)
+                        }
+                        chunk_index += 1
+                        print(f"[SEQUENTIAL-FIRST] ✓ Segment {segment_num} EMITTED!")
             
             # Clean up temporary clip files
             print(f"\n[STREAMING] Cleaning up temporary clips...")
@@ -1122,28 +1242,37 @@ class StreamingPipeline:
                 print(f"[SEGMENT {segment_index + 1}] Commentary generation failed: {e}")
                 commentaries = []
         
-        # Step 3: Generate TTS for all commentaries in this segment
+        # Step 3: Generate TTS for all commentaries in this segment (PARALLEL)
         audio_data_list = []
         if commentaries and self.tts_generator:
-            print(f"[SEGMENT {segment_index + 1}] Generating TTS audio...")
-            for commentary in commentaries:
-                try:
-                    audio_base64 = await asyncio.to_thread(
-                        self.tts_generator.generate_audio,
-                        commentary.commentary,
-                        getattr(commentary, 'speaker', None)
-                    )
-                    audio_data_list.append({
-                        'commentary': commentary,
-                        'audio_base64': audio_base64
-                    })
-                    print(f"[SEGMENT {segment_index + 1}] TTS completed for {commentary.start_time}")
-                except Exception as e:
-                    print(f"[SEGMENT {segment_index + 1}] TTS failed: {e}")
-                    audio_data_list.append({
-                        'commentary': commentary,
-                        'audio_base64': None
-                    })
+            print(f"[SEGMENT {segment_index + 1}] Generating TTS audio for {len(commentaries)} commentaries IN PARALLEL...")
+            
+            async def generate_tts_for_commentary(commentary):
+                """Helper to generate TTS for a single commentary (with rate limiting)."""
+                # Use semaphore to limit concurrent TTS requests (ElevenLabs max 3)
+                async with self.tts_semaphore:
+                    try:
+                        audio_base64 = await asyncio.to_thread(
+                            self.tts_generator.generate_audio,
+                            commentary.commentary,
+                            getattr(commentary, 'speaker', None)
+                        )
+                        print(f"[SEGMENT {segment_index + 1}] TTS completed for {commentary.start_time}")
+                        return {
+                            'commentary': commentary,
+                            'audio_base64': audio_base64
+                        }
+                    except Exception as e:
+                        print(f"[SEGMENT {segment_index + 1}] TTS failed for {commentary.start_time}: {e}")
+                        return {
+                            'commentary': commentary,
+                            'audio_base64': None
+                        }
+            
+            # Run ALL TTS calls in parallel using asyncio.gather
+            tts_tasks = [generate_tts_for_commentary(c) for c in commentaries]
+            audio_data_list = await asyncio.gather(*tts_tasks)
+            print(f"[SEGMENT {segment_index + 1}] All {len(audio_data_list)} TTS calls completed!")
         
         # Step 4: Create video chunk for this segment
         chunk_start = clip.start_time
