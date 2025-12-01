@@ -14,6 +14,12 @@ from ..video.time_utils import parse_time_to_seconds, seconds_to_time, validate_
 from ..context_manager import get_context_manager
 from ..prompts import COMMENTARY_SYSTEM_PROMPT
 
+# Try to import StateManager, but allow passing it in __init__ if import fails
+try:
+    from ..state_manager import StateManager
+except ImportError:
+    StateManager = None
+
 
 class CommentaryGenerator:
     """
@@ -22,20 +28,27 @@ class CommentaryGenerator:
     Creates 5-30 second commentary segments with proper gaps and word limits.
     """
 
-    def __init__(self, api_key: str, output_dir: Optional[Path] = None):
+    def __init__(self, api_key: str, state_manager=None, output_dir: Optional[Path] = None):
         """
         Initialize commentary generator.
 
         Args:
             api_key: Gemini API key
-            output_dir: Directory to save commentary.json (default: project_root/output/)
+            state_manager: StateManager instance for async-safe state updates (REQUIRED)
+            output_dir: Directory to save commentary.json (default: output/)
         """
         self.client = genai.Client(api_key=api_key)
         self.context_manager = get_context_manager()
 
+        # StateManager is the PRIMARY state management system
+        self.state_manager = state_manager
+
+        if self.state_manager is None:
+            print("[COMMENTARY GENERATOR WARN] No StateManager provided. Commentary will work, but state won't be persisted properly.")
+
+        # Output directory for backwards compatibility
         if output_dir is None:
-            # Default to project_root/output/
-            output_dir = Path(__file__).parent.parent.parent.parent.parent / 'output'
+            output_dir = Path("output")
 
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
@@ -92,7 +105,7 @@ class CommentaryGenerator:
 
         return "\n".join(prompt_parts)
 
-    def generate_commentary(
+    async def generate_commentary(
         self,
         events: list,
         video_duration: float,
@@ -100,6 +113,7 @@ class CommentaryGenerator:
     ) -> List[Commentary]:
         """
         Generate commentary from detected events.
+        ASYNC method that uses StateManager to persist state.
 
         Args:
             events: List of event dictionaries from events.json
@@ -153,14 +167,13 @@ class CommentaryGenerator:
             # Convert back to Commentary objects
             final_commentaries = [Commentary(**c) for c in validated_commentaries]
 
-            # Save to file
-            self._save_commentaries(final_commentaries)
+            # Save to StateManager (ASYNC)
+            await self._save_commentaries(final_commentaries)
 
             print(f"\n{'='*60}")
             print(f"COMMENTARY GENERATION COMPLETED")
             print(f"{'='*60}")
             print(f"Total commentary segments: {len(final_commentaries)}")
-            print(f"Commentaries saved to: {self.commentary_file}")
 
             return final_commentaries
 
@@ -228,24 +241,27 @@ class CommentaryGenerator:
 
         return validated
 
-    def _save_commentaries(self, commentaries: List[Commentary]) -> None:
+    async def _save_commentaries(self, commentaries: List[Commentary]) -> None:
         """
-        Save commentaries to commentary.json file.
+        Save commentaries to StateManager (PRIMARY method).
 
         Args:
             commentaries: List of Commentary objects to save
         """
-        commentary_output = CommentaryOutput(commentaries=commentaries)
-
-        with open(self.commentary_file, 'w', encoding='utf-8') as f:
-            json.dump(
-                commentary_output.model_dump(),
-                f,
-                indent=2,
-                ensure_ascii=False
-            )
-
-        print(f"[COMMENTARY] Saved {len(commentaries)} commentaries to {self.commentary_file}")
+        if self.state_manager:
+            try:
+                # Convert Commentary objects to dicts
+                commentary_dicts = [c.model_dump() for c in commentaries]
+                # Save through StateManager (which handles file I/O)
+                await self.state_manager.add_commentaries(commentary_dicts)
+                print(f"[COMMENTARY] Saved {len(commentaries)} commentaries to StateManager")
+            except Exception as e:
+                print(f"[COMMENTARY ERROR] Failed to save commentaries to StateManager: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print(f"[COMMENTARY ERROR] No StateManager provided. Commentaries will NOT be saved!")
+            print(f"[COMMENTARY ERROR] Lost {len(commentaries)} commentaries!")
 
     def load_commentaries(self) -> List[Commentary]:
         """

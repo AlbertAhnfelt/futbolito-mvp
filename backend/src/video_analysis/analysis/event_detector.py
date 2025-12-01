@@ -4,8 +4,9 @@ Analyzes videos in 30-second intervals to detect football events.
 """
 
 import json
+import time
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Any
 from google import genai
 from google.genai import types
 
@@ -15,29 +16,31 @@ from ..video.video_splitter import VideoClip
 from ..context_manager import get_context_manager
 from ..prompts import EVENT_DETECTION_SYSTEM_PROMPT
 
+# Try to import StateManager, but allow passing it in __init__ if import fails
+try:
+    from ..state_manager import StateManager
+except ImportError:
+    StateManager = None
 
 class EventDetector:
     """
     Detects football events from video using Gemini API.
-
-    Analyzes videos in 30-second intervals and extracts events with
-    timestamps, descriptions, player involvement, and intensity ratings.
+    Uses StateManager to ensure thread-safe updates to events.json.
     """
 
-    def __init__(self, api_key: str, output_dir: Optional[Path] = None):
-        """
-        Initialize event detector.
-
-        Args:
-            api_key: Gemini API key
-            output_dir: Directory to save events.json (default: project_root/output/)
-        """
+    def __init__(self, api_key: str, state_manager=None, output_dir: Optional[Path] = None):
         self.client = genai.Client(api_key=api_key)
         self.context_manager = get_context_manager()
 
+        # StateManager is the PRIMARY state management system
+        self.state_manager = state_manager
+
+        if self.state_manager is None:
+            print("[EVENT DETECTOR WARN] No StateManager provided. Event detection will work, but state won't be persisted properly.")
+
+        # Output directory for backwards compatibility (if no StateManager)
         if output_dir is None:
-            # Default to project_root/output/
-            output_dir = Path(__file__).parent.parent.parent.parent.parent / 'output'
+            output_dir = Path("output")
 
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
@@ -45,16 +48,7 @@ class EventDetector:
         self.time_analyzed_file = self.output_dir / 'time_analyzed.txt'
 
     def _build_prompt(self, interval_start: int, interval_end: int) -> str:
-        """
-        Build the prompt for event detection, optionally including match context.
-
-        Args:
-            interval_start: Start time in seconds
-            interval_end: End time in seconds
-
-        Returns:
-            Complete prompt string
-        """
+        """Build the prompt for event detection."""
         prompt_parts = []
 
         # Add match context if available
@@ -67,48 +61,42 @@ class EventDetector:
         prompt_parts.append(EVENT_DETECTION_SYSTEM_PROMPT)
         prompt_parts.append("")
 
-        # Add interval information
-        # Note: Gemini will return timestamps relative to the clip (starting at 00:00:00)
-        # Our post-processing code adjusts these by adding interval_start offset
-        start_time = seconds_to_time(interval_start)
-        end_time = seconds_to_time(interval_end)
-        prompt_parts.append(f"You are analyzing a {interval_end - interval_start}-second video clip.")
-        prompt_parts.append(f"This clip represents the time range {start_time} to {end_time} of the original match.")
-        prompt_parts.append("")
-        prompt_parts.append("Analyze this video clip and return the events in JSON format with timestamps.")
+        # Add specific interval instructions
+        duration = interval_end - interval_start
+        prompt_parts.append(f"You are analyzing a {duration}-second video clip.")
+        prompt_parts.append(f"Use timestamps 00:00:00 to {seconds_to_time(duration)}.")
+        prompt_parts.append("Analyze this video clip and return the events in JSON format.")
 
         return "\n".join(prompt_parts)
 
-    def _get_time_analyzed(self) -> int:
+    async def _update_state(self, new_events: List[Event], time_analyzed: int):
         """
-        Get the current time_analyzed value.
-
-        Returns:
-            Number of seconds analyzed so far (0 if not started)
-        """
-        if not self.time_analyzed_file.exists():
-            return 0
-
-        try:
-            with open(self.time_analyzed_file, 'r') as f:
-                return int(f.read().strip())
-        except (ValueError, IOError):
-            return 0
-
-    def _set_time_analyzed(self, seconds: int) -> None:
-        """
-        Update time_analyzed to the given value.
-
-        CRITICAL: This should ONLY be called AFTER events.json has been written.
-        This ensures downstream processes (like commentary generation) can safely
-        read the new events before being triggered.
+        Centralized async method to update state through StateManager.
+        This is the PRIMARY way to persist events.
 
         Args:
-            seconds: Number of seconds that have been analyzed
+            new_events: List of Event objects detected
+            time_analyzed: Time in seconds that has been analyzed
         """
-        with open(self.time_analyzed_file, 'w') as f:
-            f.write(str(seconds))
-        print(f"[EVENT DETECTOR] Updated time_analyzed to {seconds}s")
+        # 1. Convert Pydantic models to pure Python dicts for JSON serialization
+        events_dicts = [event.model_dump() for event in new_events]
+
+        # 2. Update via StateManager (PRIMARY method)
+        if self.state_manager:
+            try:
+                # Add events to StateManager (which handles file I/O)
+                await self.state_manager.add_events(events_dicts)
+                # Update the time clock
+                await self.state_manager.update_time_analyzed(time_analyzed)
+                print(f"[EVENT DETECTOR] Successfully pushed {len(new_events)} events to StateManager.")
+            except Exception as e:
+                print(f"[EVENT DETECTOR ERROR] Failed to update StateManager: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            # No StateManager - this should not happen in production
+            print(f"[EVENT DETECTOR ERROR] No StateManager provided. Events will NOT be saved!")
+            print(f"[EVENT DETECTOR ERROR] Lost {len(new_events)} events!")
 
     def detect_events_for_interval(
         self,
@@ -117,38 +105,19 @@ class EventDetector:
         interval_end: int
     ) -> List[Event]:
         """
-        Detect events in a specific time interval of the video.
-
-        Args:
-            file_uri: Gemini file URI for the pre-split video clip
-            interval_start: Start time in seconds (in the original video)
-            interval_end: End time in seconds (in the original video)
-
-        Returns:
-            List of detected Event objects
-
-        Raises:
-            ValueError: If Gemini response is invalid
-            RuntimeError: If API call fails
+        Detect events in a specific time interval.
+        Includes Sanity Clamping for timestamps.
         """
-        print(f"\n[EVENT DETECTOR] Analyzing interval {seconds_to_time(interval_start)} - {seconds_to_time(interval_end)}")
+        clip_duration = interval_end - interval_start
+        print(f"\n[EVENT DETECTOR] Analyzing interval {seconds_to_time(interval_start)} - {seconds_to_time(interval_end)} (Duration: {clip_duration}s)")
 
-        # Build prompt with context
         prompt = self._build_prompt(interval_start, interval_end)
 
-        # Create video part for pre-split clip
-        video_part = types.Part(
-            file_data=types.FileData(file_uri=file_uri)
-        )
-
-        # Create text part for prompt
+        video_part = types.Part(file_data=types.FileData(file_uri=file_uri))
         text_part = types.Part(text=prompt)
-
-        # Create content with both parts
         content = types.Content(parts=[video_part, text_part])
 
         try:
-            # Generate content with JSON schema
             response = self.client.models.generate_content(
                 model="gemini-2.0-flash-exp",
                 contents=content,
@@ -158,268 +127,87 @@ class EventDetector:
                 )
             )
 
-            # Parse response
-            response_text = response.text
-            print(f"[EVENT DETECTOR] Received response: {len(response_text)} characters")
-
-            # DEBUG: Print raw response to see what Gemini returned
-            print(f"[EVENT DETECTOR] Raw JSON response:")
-            print(response_text)
-            print("[EVENT DETECTOR] ---")
-
-            # Parse JSON and validate with Pydantic
-            events_data = json.loads(response_text)
+            events_data = json.loads(response.text)
             events_output = EventsOutput(**events_data)
 
-            print(f"[EVENT DETECTOR] Detected {len(events_output.events)} events in this interval")
+            print(f"[EVENT DETECTOR] Detected {len(events_output.events)} raw events")
 
-            # Post-process timestamps: Add interval_start offset to all event times
-            # When using pre-split clips, Gemini returns timestamps relative to the clip (0-30s)
-            # We need to shift them to be relative to the full video
+            # --- SANITY CHECK AND OFFSET CALCULATION ---
+            valid_events = []
             for event in events_output.events:
-                # Parse the event time to seconds
-                event_seconds = parse_time_to_seconds(event.time)
-                # Add the interval start offset
-                corrected_seconds = event_seconds + interval_start
-                # Convert back to time format
-                event.time = seconds_to_time(corrected_seconds)
+                # 1. Parse raw time (relative to clip start 00:00:00)
+                raw_seconds = parse_time_to_seconds(event.time)
 
-            # Log detected event times for debugging
-            if events_output.events:
-                for event in events_output.events:
-                    print(f"[EVENT DETECTOR]   Event at {event.time}: {event.description[:60]}...")
-            else:
-                print(f"[EVENT DETECTOR]   No events detected in this interval")
+                # 2. Sanity Clamp
+                if raw_seconds >= clip_duration:
+                    print(f"[WARN] Event time {event.time} exceeds clip duration. Clamping.")
+                    raw_seconds = clip_duration - 1
+                    if raw_seconds < 0: raw_seconds = 0
 
-            return events_output.events
+                # 3. Calculate absolute match time
+                absolute_seconds = interval_start + raw_seconds
+                if absolute_seconds >= interval_end:
+                    absolute_seconds = interval_end - 1
 
-        except json.JSONDecodeError as e:
-            print(f"[ERROR] Failed to parse JSON response: {e}")
-            print(f"[ERROR] Response text: {response_text}")
-            raise ValueError(f"Invalid JSON response from Gemini: {e}")
+                # 4. Update event
+                event.time = seconds_to_time(absolute_seconds)
+                valid_events.append(event)
+            
+            return valid_events
 
         except Exception as e:
-            print(f"[ERROR] Event detection failed: {e}")
-            raise RuntimeError(f"Event detection API call failed: {e}")
+            print(f"[ERROR] API call failed: {e}")
+            raise
 
-    def detect_events_from_clips(
-        self,
-        clips: List[VideoClip],
-        clip_file_uris: List[str]
-    ) -> List[Event]:
-        """
-        Detect all events from pre-split video clips.
-
-        This method processes physically split video clips. Each clip is analyzed
-        independently, and timestamps are automatically adjusted to match the full video.
-
-        Args:
-            clips: List of VideoClip objects with metadata
-            clip_file_uris: List of Gemini file URIs (one per clip, in order)
-
-        Returns:
-            List of all detected events across all clips (sorted chronologically)
-
-        Example:
-            >>> detector = EventDetector(api_key="...")
-            >>> splitter = VideoSplitter(ffmpeg_exe="...")
-            >>> clips = splitter.split_video(video_path, duration=133, interval_seconds=30)
-            >>> # Upload each clip to Gemini
-            >>> clip_uris = []
-            >>> for clip in clips:
-            >>>     uploaded = client.files.upload(file=str(clip.path))
-            >>>     clip_uris.append(uploaded.uri)
-            >>> # Detect events
-            >>> events = detector.detect_events_from_clips(clips, clip_uris)
-        """
-        if len(clips) != len(clip_file_uris):
-            raise ValueError(f"Mismatch: {len(clips)} clips but {len(clip_file_uris)} URIs")
-
-        print(f"\n{'='*60}")
-        print(f"EVENT DETECTION STARTED")
-        print(f"{'='*60}")
-        print(f"Total clips to analyze: {len(clips)}")
-
-        all_events = []
-
-        # Analyze each clip
-        for i, (clip, file_uri) in enumerate(zip(clips, clip_file_uris), 1):
-            print(f"\n[{i}/{len(clips)}] Analyzing clip: {seconds_to_time(clip.start_time)} - {seconds_to_time(clip.end_time)}")
-            print(f"[{i}/{len(clips)}] Clip file: {clip.path.name}")
-
-            try:
-                # Detect events for this clip
-                events = self.detect_events_for_interval(
-                    file_uri=file_uri,
-                    interval_start=clip.start_time,
-                    interval_end=clip.end_time
-                )
-
-                all_events.extend(events)
-
-                # Save events to file after each clip
-                # Sort before saving to ensure chronological order
-                all_events.sort(key=lambda e: parse_time_to_seconds(e.time))
-                self._save_events(all_events)
-
-                print(f"[{i}/{len(clips)}] ✓ Completed. Total events so far: {len(all_events)}")
-
-            except Exception as e:
-                print(f"[{i}/{len(clips)}] ✗ Failed: {e}")
-                # Continue with next clip even if this one fails
-                continue
-
-        # Final sort to ensure chronological order
-        all_events.sort(key=lambda e: parse_time_to_seconds(e.time))
-
-        # Save sorted events
-        self._save_events(all_events)
-
-        print(f"\n{'='*60}")
-        print(f"EVENT DETECTION COMPLETED")
-        print(f"{'='*60}")
-        print(f"Total events detected: {len(all_events)}")
-        print(f"Events saved to: {self.events_file} (sorted chronologically)")
-
-        return all_events
-
-    def _save_events(self, events: List[Event]) -> None:
-        """
-        Save events to events.json file.
-
-        Args:
-            events: List of Event objects to save
-        """
-        events_output = EventsOutput(events=events)
-
-        with open(self.events_file, 'w', encoding='utf-8') as f:
-            json.dump(
-                events_output.model_dump(),
-                f,
-                indent=2,
-                ensure_ascii=False
-            )
-
-        print(f"[EVENT DETECTOR] Saved {len(events)} events to {self.events_file}")
-
-    def detect_events_rolling_window(
+    async def detect_events_rolling_window(
         self,
         clips: List[VideoClip],
         clip_file_uris: List[str],
         video_duration: int
     ) -> List[Event]:
         """
-        Detect events using the Producer rolling window workflow.
-
-        This method implements the exact Producer logic flow:
-        - Logic A: Process first 30 seconds (0-30s), write events.json, then update time_analyzed
-        - Logic B: Loop through subsequent 30-second chunks with the same pattern
-
-        CRITICAL: time_analyzed is ONLY updated AFTER events.json is written.
-        This ensures downstream processes can safely read new events.
-
-        Args:
-            clips: List of VideoClip objects (pre-split, in order)
-            clip_file_uris: List of Gemini file URIs (one per clip, in order)
-            video_duration: Total duration of the video in seconds
-
-        Returns:
-            List of all detected events (sorted chronologically)
+        Producer Logic A -> B Flow.
+        ASYNC method that uses StateManager to persist state.
         """
         if len(clips) != len(clip_file_uris):
-            raise ValueError(f"Mismatch: {len(clips)} clips but {len(clip_file_uris)} URIs")
+            raise ValueError(f"Mismatch: Clips={len(clips)}, URIs={len(clip_file_uris)}")
 
-        print(f"\n{'='*60}")
-        print(f"PRODUCER ROLLING WINDOW - EVENT DETECTION STARTED")
-        print(f"{'='*60}")
-        print(f"Video duration: {video_duration}s")
-        print(f"Total clips: {len(clips)}")
-        print(f"Interval: 30 seconds per chunk")
+        print(f"\n{'='*60}\nPRODUCER ROLLING WINDOW - STARTING\n{'='*60}")
 
-        all_events = []
+        all_events_accumulator = []
 
-        # ============================================================
-        # LOGIC A: Initialize with first 30 seconds (0-30s)
-        # ============================================================
-        if len(clips) == 0:
-            print("[ERROR] No clips provided")
-            return []
+        # LOGIC A: First Clip (Initialization)
+        if len(clips) > 0:
+            print(f"\n[LOGIC A] Processing initialization chunk (0-{clips[0].end_time}s)...")
+            try:
+                events = self.detect_events_for_interval(clip_file_uris[0], clips[0].start_time, clips[0].end_time)
 
-        first_clip = clips[0]
-        first_uri = clip_file_uris[0]
+                # Update accumulator for return value
+                all_events_accumulator.extend(events)
 
-        print(f"\n{'='*60}")
-        print(f"LOGIC A: INITIALIZATION - First 30 seconds")
-        print(f"{'='*60}")
-        print(f"Processing interval: {seconds_to_time(first_clip.start_time)} - {seconds_to_time(first_clip.end_time)}")
+                # PUSH UPDATE TO STATE MANAGER (ASYNC)
+                await self._update_state(events, clips[0].end_time)
 
-        try:
-            # 1. Analyze first 30 seconds
-            events = self.detect_events_for_interval(
-                file_uri=first_uri,
-                interval_start=first_clip.start_time,
-                interval_end=first_clip.end_time
-            )
-            all_events.extend(events)
+            except Exception as e:
+                print(f"[LOGIC A] Fatal init error: {e}")
+                raise
 
-            # 2. Write to events.json
-            all_events.sort(key=lambda e: parse_time_to_seconds(e.time))
-            self._save_events(all_events)
-            print(f"[LOGIC A] Events written to {self.events_file}")
-
-            # 3. CRITICAL: Update time_analyzed ONLY AFTER JSON is written
-            self._set_time_analyzed(first_clip.end_time)
-            print(f"[LOGIC A] ✓ Completed first 30 seconds. Total events: {len(all_events)}")
-
-        except Exception as e:
-            print(f"[LOGIC A] ✗ Failed to process first 30 seconds: {e}")
-            raise
-
-        # ============================================================
-        # LOGIC B: Loop through remaining 30-second chunks
-        # ============================================================
+        # LOGIC B: Remaining Clips (Loop)
         if len(clips) > 1:
-            print(f"\n{'='*60}")
-            print(f"LOGIC B: ROLLING WINDOW LOOP - Remaining chunks")
-            print(f"{'='*60}")
-            print(f"Remaining clips to process: {len(clips) - 1}")
-
+            print(f"\n[LOGIC B] Entering rolling loop for {len(clips)-1} remaining clips...")
             for i in range(1, len(clips)):
-                clip = clips[i]
-                uri = clip_file_uris[i]
-
-                print(f"\n[{i}/{len(clips)-1}] Processing interval: {seconds_to_time(clip.start_time)} - {seconds_to_time(clip.end_time)}")
-
                 try:
-                    # 1. Analyze next 30 seconds
-                    events = self.detect_events_for_interval(
-                        file_uri=uri,
-                        interval_start=clip.start_time,
-                        interval_end=clip.end_time
-                    )
-                    all_events.extend(events)
+                    events = self.detect_events_for_interval(clip_file_uris[i], clips[i].start_time, clips[i].end_time)
 
-                    # 2. Write to events.json
-                    all_events.sort(key=lambda e: parse_time_to_seconds(e.time))
-                    self._save_events(all_events)
-                    print(f"[LOGIC B] Events written to {self.events_file}")
+                    # Update accumulator
+                    all_events_accumulator.extend(events)
 
-                    # 3. CRITICAL: Update time_analyzed ONLY AFTER JSON is written
-                    self._set_time_analyzed(clip.end_time)
-                    print(f"[LOGIC B] [{i}/{len(clips)-1}] ✓ Completed. Total events: {len(all_events)}")
+                    # PUSH UPDATE TO STATE MANAGER (ASYNC)
+                    await self._update_state(events, clips[i].end_time)
 
                 except Exception as e:
-                    print(f"[LOGIC B] [{i}/{len(clips)-1}] ✗ Failed: {e}")
-                    # Continue with next chunk even if this one fails
+                    print(f"[LOGIC B] Chunk {i} failed, skipping: {e}")
                     continue
 
-        # Final summary
-        print(f"\n{'='*60}")
-        print(f"PRODUCER ROLLING WINDOW - COMPLETED")
-        print(f"{'='*60}")
-        print(f"Total events detected: {len(all_events)}")
-        print(f"Final time_analyzed: {self._get_time_analyzed()}s")
-        print(f"Events saved to: {self.events_file}")
-        print(f"Time tracking: {self.time_analyzed_file}")
-
-        return all_events
+        print(f"\n[EVENT DETECTOR] Pipeline complete. Total events: {len(all_events_accumulator)}")
+        return all_events_accumulator

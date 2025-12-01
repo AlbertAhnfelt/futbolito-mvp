@@ -29,6 +29,7 @@ from .audio.tts_generator import TTSGenerator
 from .video.video_processor import VideoProcessor
 from .video.video_splitter import VideoSplitter, VideoClip
 from .video.time_utils import calculate_video_intervals, seconds_to_time, parse_time_to_seconds
+from .state_manager import StateManager
 
 
 class StreamingPipeline:
@@ -44,7 +45,7 @@ class StreamingPipeline:
 
     def __init__(self, api_key: str, elevenlabs_api_key: Optional[str] = None):
         """
-        Initialize streaming pipeline.
+        Initialize streaming pipeline with StateManager integration.
 
         Args:
             api_key: Gemini API key
@@ -53,9 +54,12 @@ class StreamingPipeline:
         self.api_key = api_key
         self.elevenlabs_api_key = elevenlabs_api_key
 
-        # Initialize components
-        self.event_detector = EventDetector(api_key=api_key)
-        self.commentary_generator = CommentaryGenerator(api_key=api_key)
+        # StateManager will be initialized per session
+        self.state_manager = None
+
+        # Components (will be re-initialized with StateManager per session)
+        self.event_detector = None
+        self.commentary_generator = None
         self.video_processor = VideoProcessor()
 
         if elevenlabs_api_key:
@@ -92,6 +96,33 @@ class StreamingPipeline:
             from datetime import datetime
             self.session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
+            # Initialize StateManager for this session
+            videos_dir = Path(__file__).parent.parent.parent.parent / 'videos'
+            session_output_dir = videos_dir / 'streaming' / self.session_id
+            session_output_dir.mkdir(exist_ok=True, parents=True)
+
+            print(f"\n{'='*60}")
+            print(f"[STREAMING PIPELINE] Initializing StateManager")
+            print(f"Session ID: {self.session_id}")
+            print(f"Output directory: {session_output_dir}")
+            print(f"{'='*60}\n")
+
+            # Create and initialize StateManager
+            self.state_manager = StateManager(output_dir=session_output_dir)
+            await self.state_manager.init_files()
+
+            # Initialize components with StateManager
+            self.event_detector = EventDetector(
+                api_key=self.api_key,
+                state_manager=self.state_manager,
+                output_dir=session_output_dir
+            )
+            self.commentary_generator = CommentaryGenerator(
+                api_key=self.api_key,
+                state_manager=self.state_manager,
+                output_dir=session_output_dir
+            )
+
             yield {
                 'type': 'status',
                 'message': 'Starting video analysis...',
@@ -99,7 +130,6 @@ class StreamingPipeline:
             }
 
             # Step 1: Prepare video
-            videos_dir = Path(__file__).parent.parent.parent.parent / 'videos'
             self.video_path = videos_dir / filename
 
             if not self.video_path.exists():
@@ -340,9 +370,6 @@ class StreamingPipeline:
 
             total_clips = len(self.clips)
 
-            # Accumulate all events for saving to events.json
-            all_events = []
-
             for i, (clip, file_uri) in enumerate(zip(self.clips, self.clip_file_uris), 1):
                 print(f"[STREAMING] Analyzing clip {i}/{total_clips}: {seconds_to_time(clip.start_time)} - {seconds_to_time(clip.end_time)}")
 
@@ -354,14 +381,9 @@ class StreamingPipeline:
                     interval_end=clip.end_time
                 )
 
-                # Accumulate events
-                all_events.extend(events)
-
-                # Sort events chronologically before saving
-                all_events.sort(key=lambda e: parse_time_to_seconds(e.time))
-
-                # Save accumulated events to events.json after each clip
-                self.event_detector._save_events(all_events)
+                # Save events to StateManager (happens inside detect_events_for_interval via _update_state)
+                # StateManager handles all file I/O and state persistence
+                await self.event_detector._update_state(events, clip.end_time)
 
                 # Push to queue immediately (don't wait for other clips)
                 await event_queue.put({
@@ -370,7 +392,7 @@ class StreamingPipeline:
                     'interval_index': i - 1
                 })
 
-                print(f"[STREAMING] Pushed {len(events)} events from clip {i} to queue (total: {len(all_events)})")
+                print(f"[STREAMING] Pushed {len(events)} events from clip {i} to queue")
 
                 # Emit SSE event for progress tracking
                 await sse_event_queue.put({
@@ -388,7 +410,7 @@ class StreamingPipeline:
 
             # Signal completion
             await event_queue.put(None)
-            print(f"[STREAMING] Event detection completed - saved {len(all_events)} total events to events.json")
+            print(f"[STREAMING] Event detection completed - all events saved to StateManager")
 
         except Exception as e:
             print(f"[STREAMING] Event detection error: {e}")
@@ -414,9 +436,6 @@ class StreamingPipeline:
 
             interval_index = 0
 
-            # Accumulate all commentaries for saving to commentary.json
-            all_commentaries = []
-
             while True:
                 event_batch = await event_queue.get()
 
@@ -435,29 +454,23 @@ class StreamingPipeline:
                     continue
 
                 # Generate commentary for just these events
-                # Use synchronous call wrapped in executor to avoid blocking
+                # NOTE: generate_commentary is now async and saves to StateManager internally
                 try:
-                    commentaries = await asyncio.to_thread(
-                        self.commentary_generator.generate_commentary,
+                    commentaries = await self.commentary_generator.generate_commentary(
                         events=[e.model_dump() for e in events],
                         video_duration=self.video_duration,  # Use FULL video duration, not interval end
                         use_streaming=False
                     )
 
                     # Push each commentary to queue immediately
+                    # StateManager has already saved them via generate_commentary -> _save_commentaries
                     for commentary in commentaries:
-                        # Accumulate commentaries
-                        all_commentaries.append(commentary)
-
-                        # Save accumulated commentaries to commentary.json
-                        self.commentary_generator._save_commentaries(all_commentaries)
-
                         await commentary_queue.put({
                             'commentary': commentary,
                             'interval_index': interval_index
                         })
 
-                        print(f"[STREAMING] Pushed commentary to queue: {commentary.start_time} - {commentary.end_time} (total: {len(all_commentaries)})")
+                        print(f"[STREAMING] Pushed commentary to queue: {commentary.start_time} - {commentary.end_time}")
 
                         # Emit SSE event for progress tracking
                         await sse_event_queue.put({
@@ -469,6 +482,8 @@ class StreamingPipeline:
 
                 except Exception as e:
                     print(f"[STREAMING] Commentary generation failed for interval {interval}: {e}")
+                    import traceback
+                    traceback.print_exc()
                     # Continue with next interval even if this one fails
 
                 interval_index += 1
@@ -476,7 +491,7 @@ class StreamingPipeline:
             # Signal completion
             await commentary_queue.put(None)
             await sse_event_queue.put(None)  # Signal SSE stream completion
-            print(f"[STREAMING] Commentary generation completed - saved {len(all_commentaries)} total commentaries to commentary.json")
+            print(f"[STREAMING] Commentary generation completed - all commentaries saved to StateManager")
 
         except Exception as e:
             print(f"[STREAMING] Commentary generation error: {e}")

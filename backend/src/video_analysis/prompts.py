@@ -78,7 +78,7 @@ Each event object must exactly follow this structure:
 
 Notes:
 
-"time" → timecode in the video when the event starts (HH:MM:SS). It should be between 00:00:00 and 00:00:30.
+"time" → Time relative to the video file start (00:00:00 - 00:00:30). NEVER EXCEED 30 SECONDS.
 
 "replay" → boolean: true if it's a replay segment, false if live action.
 
