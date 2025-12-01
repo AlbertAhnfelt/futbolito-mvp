@@ -1,0 +1,64 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:00",
+      "end_time": "00:00:10",
+      "commentary": "Player #10 drives forward into attack. A precise pass finds Rafinha (#13)! He crosses, blocked! Player #7 heads it, a stunning save from the keeper!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:11",
+      "end_time": "00:00:21",
+      "commentary": "GOAL! Player #31! Rebound collected and smashed home! Unbelievable! What an immediate response, absolutely clinical. The stadium erupts!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:22",
+      "end_time": "00:00:32",
+      "commentary": "The crowd is absolutely erupting! What an incredible atmosphere! Bayern Munich players are celebrating, embracing. Player #10 joins the jubilant huddle.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:29",
+      "end_time": "00:00:36",
+      "commentary": "Guardiola intently watching, staff animated! Bayern players celebrating! Schweinsteiger, Alaba, Mandžukić! A goal!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:38",
+      "end_time": "00:00:48",
+      "commentary": "What a breakthrough for Bayern! And they push again! Ribéry with a powerful low drive! But the keeper makes a spectacular save!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:50",
+      "end_time": "00:01:10",
+      "commentary": "Here's the replay! Franck Ribéry receives a perfect pass. A clinical low shot, past the diving United keeper! Goal!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "01:00:02",
+      "end_time": "01:00:15",
+      "commentary": "Absolutely no chance for the keeper there! Just brilliant execution from Ribéry. You can see the ball nestled in the net and Fellaini's disappointment. World-class finish!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:02",
+      "end_time": "00:01:08",
+      "commentary": "GOAL! Player 31 scores! Close-range header, right into the top corner! What a start!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:09",
+      "end_time": "00:01:15",
+      "commentary": "Brilliant! Straight into incredible highlights. Ronaldo and Player 889's clinical finish!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:16",
+      "end_time": "00:01:19",
+      "commentary": "Legendary players and powerful strikes!",
+      "speaker": "COMMENTATOR_1"
+    }
+  ]
+}

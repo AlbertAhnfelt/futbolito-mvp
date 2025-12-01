@@ -1,0 +1,58 @@
+{
+  "events": [
+    {
+      "time": "00:00:05",
+      "description": "A white-jerseyed player from central midfield delivers a long pass towards the right attacking flank, initiating a dangerous offensive move for Sweden.",
+      "replay": false,
+      "intensity": 5
+    },
+    {
+      "time": "00:00:07",
+      "description": "Player #13 in a yellow jersey, positioned on the right flank just outside the penalty box, delivers a precise cross towards the D-area, setting up an attacking opportunity for his teammate.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:12",
+      "description": "Zlatan Ibrahimović (#10), with his back to the goal at approximately 25 yards out, executes an extraordinary acrobatic bicycle kick. The ball soars with incredible power and precision over the diving England goalkeeper, Joe Hart, and nestles into the top left corner of the net, marking Sweden's fourth goal and changing the score to 4-2.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:16",
+      "description": "Following his spectacular goal, Zlatan Ibrahimović (#10) celebrates exuberantly by removing his jersey, revealing his tattooed torso, and running towards the corner flag with arms outstretched in jubilation as his teammates rush to embrace him.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:23",
+      "description": "An on-screen graphic appears, identifying \"10 ZLATAN IBRAHIMOVIC\" as the GOALSCORER, while he is shown on the field embracing his joyful teammates during the post-goal celebration, showcasing the high emotions of the moment.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:32",
+      "description": "Zlatan Ibrahimović (Sweden #10), shirtless and displaying prominent back tattoos, is seen celebrating a goal, embracing and smiling with his Sweden teammates (including Jansson #13, Sana #14, Player #8 Bensson, and Player #16). The scoreboard confirms the score as Sweden 4 - England 2.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:40",
+      "description": "Replay initiated: Zlatan Ibrahimović (Sweden #10) receives a high, bouncing ball outside the penalty area. With incredible athleticism, he executes an acrobatic overhead bicycle kick from approximately 25-30 yards out, sending the ball soaring over the head of the English goalkeeper (wearing red) and into the net.",
+      "replay": true,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:49",
+      "description": "Another replay angle of the goal: Zlatan Ibrahimović (Sweden #10) leaps high to connect with a lofted ball from about 30 yards away from the goal. He performs a spectacular overhead bicycle kick with his back to the goal, precisely lobbing the ball over the diving English goalkeeper (wearing red) into the top corner.",
+      "replay": true,
+      "intensity": 10
+    },
+    {
+      "time": "00:01:04",
+      "description": "A goal has just been scored, with the ball visible inside the net. England goalkeeper Joe Hart (#1) is on the ground near the left post, having failed to save the shot. Player #5 (white jersey) is positioned close to the goal, observing the play, while Tom Huddleston (#18) stands further back within the penalty area. The crowd in the background is seen celebrating the goal.",
+      "replay": false,
+      "intensity": 10
+    }
+  ]
+}
