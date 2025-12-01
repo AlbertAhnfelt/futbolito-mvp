@@ -1,0 +1,52 @@
+{
+  "events": [
+    {
+      "time": "00:00:08",
+      "description": "An incredible acrobatic overhead kick, executed from outside the penalty box, sends the ball looping high over the England goalkeeper's head and into the top left corner of the net. This spectacular goal increases Sweden's lead to 4-2 against England. The scorer is later identified as Zlatan Ibrahimović (10).",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:14",
+      "description": "Following the goal, the scorer, Zlatan Ibrahimović (10), begins a jubilant celebration by removing his shirt and running towards the crowd with his arms outstretched, revealing numerous tattoos on his back. His Swedish teammates (including Player 13 and Player 15) rush to congratulate him.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:23",
+      "description": "An on-screen graphic appears, identifying \"10 ZLATAN IBRAHIMOVIC\" as the GOALSCORER, confirming the identity of the player currently celebrating and being embraced by teammate Player 15.",
+      "replay": false,
+      "intensity": 3
+    },
+    {
+      "time": "00:00:30",
+      "description": "Swedish forward Zlatan Ibrahimović (#10) stands shirtless, being embraced and congratulated by his teammates, including Player #8 Svensson, Player #16, and Player #14 Sana, amidst a roaring crowd, celebrating Sweden's 4-2 lead against England in the final moments of the match.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:38",
+      "description": "A red graphical overlay featuring the three-lion crest of the England national football team briefly appears on screen, indicating a transition to a replay.",
+      "replay": true,
+      "intensity": 3
+    },
+    {
+      "time": "00:00:39",
+      "description": "From a high and wide perspective, Zlatan Ibrahimović (#10) performs an extraordinary overhead bicycle kick from roughly 25-30 yards outside the penalty box, sending the ball with power and accuracy over the England goalkeeper, Joe Hart, who is sprawled on the ground inside the net, having failed to save the spectacular shot.",
+      "replay": true,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:49",
+      "description": "A replay from a sideline camera angle captures Zlatan Ibrahimović (#10) in mid-air, executing a breathtaking overhead bicycle kick from a considerable distance outside the box, launching the ball high over the head of the England goalkeeper Joe Hart and precisely into the top right corner of the goal.",
+      "replay": true,
+      "intensity": 10
+    },
+    {
+      "time": "00:01:04",
+      "description": "A goal is scored as the ball has just crossed the goal line into the net. The goalkeeper, Player #1 (white jersey), is on the ground inside the goal, having been beaten by the shot. Player #5 (white jersey) stands near the goal observing the play, while Player #18 (white jersey) is further out on the right. An opposing player in a red jersey is partially visible on the left side of the frame near the goal.",
+      "replay": false,
+      "intensity": 9
+    }
+  ]
+}

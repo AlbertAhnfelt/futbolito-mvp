@@ -1,0 +1,70 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:04",
+      "end_time": "00:00:07",
+      "commentary": "Schweinsteiger! Great touch, low shot...",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:08",
+      "end_time": "00:00:11",
+      "commentary": "Absolutely brilliant from Bastian!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:12",
+      "end_time": "00:00:16",
+      "commentary": "Here's the replay. Watch Schweinsteiger's quick feet past the defender.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:17",
+      "end_time": "00:00:21",
+      "commentary": "Unbelievable control. Precise shot into the corner. Perfection.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:22",
+      "end_time": "00:00:26",
+      "commentary": "And another replay showing him beating the second defender.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:27",
+      "end_time": "00:00:30",
+      "commentary": "Pure skill, fantastic! World-class from Bastian Schweinsteiger.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:29",
+      "end_time": "00:00:32",
+      "commentary": "Player #7 with a fierce low shot!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:33",
+      "end_time": "00:00:36",
+      "commentary": "Replay shows it's a goal!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:37",
+      "end_time": "00:00:41",
+      "commentary": "And look at the build-up! Player #7's incredible dribbling here!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:43",
+      "end_time": "00:00:47",
+      "commentary": "Absolutely sensational! The ball ripples the net! What a goal!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:48",
+      "end_time": "00:00:52",
+      "commentary": "Wonderful scenes! Player #7 embraced by Player #5. Joy!",
+      "speaker": "COMMENTATOR_1"
+    }
+  ]
+}

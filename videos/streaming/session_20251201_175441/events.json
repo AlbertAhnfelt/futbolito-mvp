@@ -1,0 +1,70 @@
+{
+  "events": [
+    {
+      "time": "00:00:01",
+      "description": "A Bayern Munich player, wearing jersey number 10, receives the ball in the central midfield area and initiates a determined dribble, expertly carrying the ball forward into the attacking half towards the right side of the opponent's penalty box, looking for an opening.",
+      "replay": false,
+      "intensity": 4
+    },
+    {
+      "time": "00:00:06",
+      "description": "Bayern Munich's Player #10 executes a precise ground pass to Player #25 on the right wing. Player #25 then swiftly dribbles along the byline, evading a defender, and delivers a high, arcing cross into the penalty area, aiming for teammates positioned near the goal.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:11",
+      "description": "Following Player #25's cross, Player #7 attempts a header inside the penalty box but misses the connection. The ball then falls to Bastian Schweinsteiger (#31), who initially has a low left-footed shot blocked by a defender, but immediately follows up with a powerful right-footed volley on the rebound, sending the ball into the top corner of the net for a stunning goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:16",
+      "description": "After scoring, Bastian Schweinsteiger (#31) runs to celebrate, embracing Rafinha (#13) with palpable emotion. Both players are seen pumping their fists in the air and smiling broadly towards the ecstatic crowd, reveling in the moment of triumph.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:28",
+      "description": "The camera captures the jubilant Bayern Munich crowd, a sea of red, cheering and waving their arms in excitement. On the field, players including Bastian Schweinsteiger (#31), Rafinha (#13), and Jérôme Boateng (#17) are tightly embracing, sharing the joyous moment of their goal.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:30",
+      "description": "Bayern Munich coach Pep Guardiola, wearing a suit, observes the game intently from the dugout, leaning over the barrier. Beside him, an assistant coach watches with his hand covering his mouth, showing a pensive expression.",
+      "replay": false,
+      "intensity": 2
+    },
+    {
+      "time": "00:00:35",
+      "description": "Several Bayern Munich players are seen on the field in a group huddle, embracing and celebrating a recent goal. Bastian Schweinsteiger, with short blonde hair, is prominent in the center, while David Alaba (#27) raises his right arm in triumph, and Mario Mandžukić (#9) also participates in the celebration.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:49",
+      "description": "In live action, Bayern Munich's Thiago Alcântara (#6) passes the ball from the edge of the penalty area towards the left wing. Franck Ribéry (#7) receives the ball and delivers a precise low cross into the penalty box. Thomas Müller (#25) connects with the ball inside the six-yard box, slotting a low shot with his right foot past the diving Manchester United goalkeeper into the bottom left corner of the net, scoring a goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:53",
+      "description": "A replay from a wide, elevated angle shows Thomas Müller (#25) receiving the cross inside the penalty area. He executes a clinical low finish with his right foot into the bottom left corner of the goal, past the outstretched arms of the Manchester United goalkeeper, who is unable to make the save.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:58",
+      "description": "Another replay, this time from an angle directly behind the goal, captures Thomas Müller (#25) striking the ball from close range. The ball clearly hits the back of the net, confirming the goal. Manchester United's Marouane Fellaini (#31) watches the ball enter the net in disappointment. An on-screen graphic confirms the event with the German text: 'Neuer Spielstand. Tor von FC Bayern.' (New Score. Goal by FC Bayern.)",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:02",
+      "description": "Player #31 for the away team (dark blue jersey, likely Bastian Schweinsteiger) scores a goal with a powerful header from close range inside the penalty box, directing the ball past the diving goalkeeper David De Gea (green jersey) and defender Player #4 (red jersey, likely Phil Jones) into the top left corner of the net.",
+      "replay": false,
+      "intensity": 9
+    }
+  ]
+}

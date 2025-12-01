@@ -1,0 +1,88 @@
+{
+  "events": [
+    {
+      "time": "00:00:05",
+      "description": "Bastian Schweinsteiger (7) of Germany receives a pass on the edge of the penalty area, takes a skillful touch to control the ball, and then strikes a low shot with his right foot into the bottom right corner of the goal, past the diving Portuguese goalkeeper.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:07",
+      "description": "Bastian Schweinsteiger (7) celebrates his goal, pointing to the crowd with a grin, as his teammates congratulate him.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:09",
+      "description": "Replay showing Bastian Schweinsteiger (7) dribbling with the ball in the attacking third, evading a challenge from a Portuguese defender with close control.",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:13",
+      "description": "Replay showing Bastian Schweinsteiger (7) taking a right-footed shot from just inside the penalty area, sending the ball towards the goal.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:15",
+      "description": "Replay with a close-up angle showing the ball cleanly hitting the back of the net as the Portuguese goalkeeper (Ricardo) attempts a desperate dive to his right.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:18",
+      "description": "Wider angle replay showing Bastian Schweinsteiger (7) receiving the ball outside the box and driving into the penalty area towards the goal.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:21",
+      "description": "Replay from a different camera angle showing Bastian Schweinsteiger (7) striking the ball with precision into the goal, with the goalkeeper unable to make the save.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:24",
+      "description": "Replay showing Bastian Schweinsteiger (7) skillfully dribbling past an initial Portuguese defender with quick footwork in the midfield.",
+      "replay": true,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:27",
+      "description": "Replay showing Bastian Schweinsteiger (7) performing a body feint to successfully evade a sliding tackle attempt from a second Portuguese defender before continuing his run forward.",
+      "replay": true,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:30",
+      "description": "In live action, Player #7 (white jersey) takes a powerful low shot from just outside the penalty area, aiming towards the right side of the goal. The opposing goalkeeper (blue jersey) makes a full-stretch diving save to his right, successfully deflecting the ball away from the net.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:33",
+      "description": "A replay of the goal-scoring sequence begins. Player #7 (white jersey) receives the ball near the edge of the penalty box, takes a skillful touch to control it, and then unleashes a powerful low-driven shot with his right foot from approximately 18 yards out, sending the ball past the diving goalkeeper (blue jersey) into the bottom right corner of the net.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:37",
+      "description": "Another replay shows Player #7 (white jersey) performing intricate dribbling at speed in the attacking third. He evades multiple Portuguese defenders (red jerseys), including a quick move past Player #17, demonstrating excellent close control and agility before setting up the shot that resulted in the goal.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:43",
+      "description": "A replay from behind the goal captures the ball hitting the back of the net following Player #7's shot, with the goalkeeper (blue jersey) on the ground unable to make the save. The camera then pans slightly to show Player #7 (white jersey) celebrating the successful goal.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:48",
+      "description": "In a celebratory replay, Player #7 (white jersey), the goal scorer, is seen embracing and being heartily congratulated by his teammate, Player #5 (white jersey), on the field, both players smiling broadly in joy.",
+      "replay": true,
+      "intensity": 7
+    }
+  ]
+}

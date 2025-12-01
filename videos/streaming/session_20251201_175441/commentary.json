@@ -1,0 +1,70 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:28",
+      "end_time": "00:00:32",
+      "commentary": "Pep Guardiola watches intently from the dugout, alongside his pensive",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:33",
+      "end_time": "00:00:36",
+      "commentary": "Always analyzing, even when winning. Such focus!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:37",
+      "end_time": "00:00:43",
+      "commentary": "And the Bayern players celebrate another goal! Schweinsteiger, Alaba, and Mandžukić clearly delighted.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:44",
+      "end_time": "00:00:48",
+      "commentary": "They're absolutely flying today! Confidence is through the roof!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:49",
+      "end_time": "00:00:55",
+      "commentary": "Thiago to Ribéry, a superb low cross! Müller with the clinical finish! Goal for Bayern!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:56",
+      "end_time": "00:01:01",
+      "commentary": "What a magnificent team goal! Absolutely textbook attacking play from Bayern!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:02",
+      "end_time": "00:01:06",
+      "commentary": "Look at Thomas Müller's composure in the box.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:07",
+      "end_time": "00:01:11",
+      "commentary": "The keeper had no chance. Marouane Fellaini knows it too.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:00",
+      "end_time": "00:01:06",
+      "commentary": "The cross comes in! It's a header! GOAL!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:07",
+      "end_time": "00:01:11",
+      "commentary": "Unbelievable power! David De Gea had no chance.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:12",
+      "end_time": "00:01:17",
+      "commentary": "Absolutely no stopping that! Phil Jones couldn't intervene. Schweinsteiger's header was unstoppable!",
+      "speaker": "COMMENTATOR_1"
+    }
+  ]
+}

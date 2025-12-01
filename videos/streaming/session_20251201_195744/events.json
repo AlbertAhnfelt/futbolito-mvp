@@ -1,0 +1,94 @@
+{
+  "events": [
+    {
+      "time": "00:00:06",
+      "description": "Player #10 (blue/red kit) receives a pass near the right edge of the penalty area, dribbles past a defender, cutting towards the center of the box, initiating a dangerous attack.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:08",
+      "description": "Player #10 (blue/red kit) takes a right-footed shot from just inside the penalty box, aiming towards the far post, but the low drive is blocked by a crucial sliding tackle from a defending player in a red kit.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:11",
+      "description": "Following the blocked shot, the ball rebounds directly to Player #7 (blue/red kit), who strikes a powerful left-footed shot from a central position inside the penalty area, sending it past the Manchester United goalkeeper into the bottom left corner of the net for a goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:12",
+      "description": "Player #7 (blue/red kit), the goal scorer, immediately turns and runs towards the corner flag with both arms raised, pumping his fists in an ecstatic celebration.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:13",
+      "description": "Replay showing Player #7 (blue/red kit) celebrating the goal, running along the advertising boards, with Player #13 (blue/red kit) joining him for a congratulatory embrace.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:18",
+      "description": "Player #7 (blue/red kit) and Player #13 (blue/red kit) are seen embracing warmly, with Player #7 pointing towards the cheering crowd as their celebration continues.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:24",
+      "description": "A wide shot captures the enthusiastic crowd, predominantly dressed in red, standing and cheering loudly, with many fans waving scarves and flags in response to the goal.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:28",
+      "description": "Several players from the blue/red kit team gather in a tight huddle near the edge of the penalty box, embracing each other and collectively celebrating their newly scored goal.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:31",
+      "description": "Bayern Munich coach Pep Guardiola and an assistant coach are observed in the dugout, deep in thought, with concerned expressions, during a break in play.",
+      "replay": false,
+      "intensity": 4
+    },
+    {
+      "time": "00:00:35",
+      "description": "Bayern Munich players Bastian Schweinsteiger (#31), David Alaba (#27), Mario Mandžukić (#9), and another teammate in their blue striped jerseys, walk past with expressions of excitement, celebrating a significant moment, with David Alaba (#27) raising his right hand.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:40",
+      "description": "Live action from a wide angle of the pitch. Bayern Munich player #27 (David Alaba) dribbles the ball towards the left side of the penalty area, then executes a short pass to player #7 (Franck Ribery) near the edge of the box.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:47",
+      "description": "Bayern Munich player #7 (Franck Ribery) makes a short pass inside the penalty box to player #10 (Arjen Robben). Arjen Robben (#10) unleashes a powerful left-footed shot from inside the 18-yard box, aiming for the bottom left corner, which is parried away by the Manchester United goalkeeper, diving to his left.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:50",
+      "description": "Replay showing Arjen Robben (#10) receiving the ball inside the penalty area and taking a low left-footed shot towards the bottom corner, which is saved by the Manchester United goalkeeper, diving effectively to his left.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:53",
+      "description": "Replay of the immediate aftermath of the save. Bayern Munich player #9 (Mario Mandžukić) attempts a header from very close range, directing the ball towards the goal. Manchester United player #31 (Marouane Fellaini) blocks the header on the goal line. Concurrently, on-screen text appears stating \"Neuer Spielstand. Tor von FC Bayern.\" (New score. Goal for FC Bayern.), confirming a goal for Bayern Munich despite the visual showing Fellaini's block.",
+      "replay": true,
+      "intensity": 10
+    },
+    {
+      "time": "00:01:01",
+      "description": "Player #31 (wearing a dark blue kit) executes a close-range header from directly in front of the goal, inside the six-yard box. The ball flies into the top left corner of the net, beyond the outstretched dive of the Manchester United goalkeeper (wearing a green kit) and past Player #4 (wearing a red kit), scoring a goal.",
+      "replay": false,
+      "intensity": 10
+    }
+  ]
+}

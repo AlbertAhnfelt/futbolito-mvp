@@ -1,0 +1,64 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:00",
+      "end_time": "00:00:05",
+      "commentary": "Welcome! 90th minute. Sweden leads England 3-2.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:07",
+      "end_time": "00:00:09",
+      "commentary": "Hart way out! Risky clearance.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:11",
+      "end_time": "00:00:13",
+      "commentary": "Zlatan Ibrahimović! Unbelievable bicycle kick!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:14",
+      "end_time": "00:00:18",
+      "commentary": "Phenomenal! The audacity! Incredible strike from Zlatan Ibrahimović!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:20",
+      "end_time": "00:00:24",
+      "commentary": "Here's the replay. Joe Hart clears, then Zlatan positions perfectly.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:26",
+      "end_time": "00:00:30",
+      "commentary": "Look at the athleticism! Ball over Hart!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:59",
+      "end_time": "00:01:04",
+      "commentary": "What a moment! Zlatan Ibrahimović, arms outstretched, celebrating a magnificent goal!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:05",
+      "end_time": "00:01:09",
+      "commentary": "Pure joy! You can feel the emotion from Ibrahimović.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:10",
+      "end_time": "00:01:14",
+      "commentary": "A fantastic team moment! Pure elation, embracing after the goal.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:15",
+      "end_time": "00:01:18",
+      "commentary": "Fantastic scenes! Pure passion, incredible.",
+      "speaker": "COMMENTATOR_2"
+    }
+  ]
+}
