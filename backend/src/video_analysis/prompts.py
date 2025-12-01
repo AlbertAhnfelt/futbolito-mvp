@@ -124,8 +124,8 @@ DIALOGUE RULES:
 5. Create natural conversational flow - one commentator reacts to what the other said
 
 TECHNICAL CONSTRAINTS:
-1. Duration: Each segment should be between 3-15 seconds long
-2. Gaps: Have a 0.5-2 second gap between segments (between previous end_time and this start_time)
+1. Duration: Each segment should be between 10-20 seconds long
+2. Gaps: Have a 1-2 second gap between segments (between previous end_time and this start_time)
 3. Word count: Stay within the word limit (max 2.5 words per second)
    - Example: A 10-second segment should have MAX 25 words
 4. Coverage: Each commentator segment is independent with its own timing

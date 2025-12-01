@@ -1,0 +1,82 @@
+{
+  "events": [
+    {
+      "time": "00:00:02",
+      "description": "Arjen Robben (#10) receives the ball in the midfield circle and initiates an attacking dribble, carrying the ball forward into the opposition's half with purposeful strides.",
+      "replay": false,
+      "intensity": 5
+    },
+    {
+      "time": "00:00:04",
+      "description": "Arjen Robben (#10) executes a precise ground pass from the central attacking third, distributing the ball wide to Rafinha (#13) on the right wing, who controls it near the touchline.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:07",
+      "description": "Rafinha (#13) skillfully dribbles down the right flank, penetrating the penalty area and delivering a low, driven cross towards the center of the box, aiming for an unmarked teammate.",
+      "replay": false,
+      "intensity": 7
+    },
+    {
+      "time": "00:00:10",
+      "description": "Following Rafinha's (#13) cross into the penalty area, Bastian Schweinsteiger (#31) collects the ball near the penalty spot and powerfully strikes a right-footed shot, beating the diving Manchester United goalkeeper and finding the back of the net to score a crucial goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:13",
+      "description": "Bastian Schweinsteiger (#31) celebrates his goal by running with arms raised towards the stands, displaying pure joy, before being embraced by Rafinha (#13) and other teammates in a joyous huddle.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:24",
+      "description": "The camera pans to the ecstatic crowd, showcasing thousands of fans in red shirts cheering, jumping, and waving scarves enthusiastically in response to the goal, creating a vibrant and celebratory atmosphere in the stadium.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:27",
+      "description": "The scoring team's players, including Bastian Schweinsteiger (#31), Rafinha (#13), and Arjen Robben (#10), gather in a tight embrace, collectively celebrating the goal with high fives and spirited hugs, demonstrating strong team cohesion.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:31",
+      "description": "Bayern Munich head coach Pep Guardiola (wearing a dark suit) intently observes the ongoing football match from the dugout, leaning on the barrier. Beside him, a staff member (in a Bayern Munich jacket) displays visible concern, covering his mouth with his hand.",
+      "replay": false,
+      "intensity": 2
+    },
+    {
+      "time": "00:00:35",
+      "description": "Bayern Munich players make their way onto the football pitch. Bastian Schweinsteiger (#31) is seen looking towards the crowd, while David Alaba (#27) raises his hand in acknowledgment and exchanges a hug with a teammate, and Philipp Lahm (#21) walks alongside.",
+      "replay": false,
+      "intensity": 3
+    },
+    {
+      "time": "00:00:44",
+      "description": "In live action, Franck Ribéry (#7) receives the ball near the left edge of the opponent's penalty area and delivers a low, driven cross towards the center. Arjen Robben (#10) attempts a left-footed shot from approximately 12 yards out inside the box, but it is effectively blocked by Manchester United defender Nemanja Vidić (#15). The ball then rebounds to Philipp Lahm (#21) just outside the penalty area, who quickly passes it to David Alaba (#27). Alaba unleashes a powerful left-footed strike from about 18 yards out.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:50",
+      "description": "Replay showing David Alaba (#27) striking the ball with his left foot from outside the penalty area. The shot takes a deflection, hits the underside of the crossbar, and then drops into the net, beyond the diving attempt of Manchester United goalkeeper David de Gea. The shot initially appeared to be a powerful strike towards the top right corner.",
+      "replay": true,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:56",
+      "description": "A second replay, captured from a different angle, confirms David Alaba's (#27) goal. His powerful left-footed shot from outside the box decisively strikes the crossbar before deflecting downwards into the net. On-screen text in German reads \"Neue Spielstand. Tor von FC Bayern.\" (New score. Goal for FC Bayern.), confirming the score update. Bastian Schweinsteiger (#31) is seen in the background celebrating the goal with his teammates.",
+      "replay": true,
+      "intensity": 10
+    },
+    {
+      "time": "00:01:01",
+      "description": "Player #31 (wearing a dark blue jersey) scores a goal with a powerful header from close range inside the penalty area. The ball is directed towards the top left corner of the net, beating the diving goalkeeper (wearing a green jersey). Player #4 (wearing a red jersey) is also present near the goal line as the ball enters the net.",
+      "replay": false,
+      "intensity": 10
+    }
+  ]
+}

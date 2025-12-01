@@ -91,7 +91,7 @@ class CommentaryGenerator:
         prompt_parts.append("")
         prompt_parts.append("Generate commentary segments that:")
         prompt_parts.append("1. Create natural dialogue between COMMENTATOR_1 and COMMENTATOR_2")
-        prompt_parts.append("2. Each segment is 3-15 seconds")
+        prompt_parts.append("2. Each segment is 10-20 seconds")
         prompt_parts.append("3. Have 0.5-2 second gaps between segments")
         prompt_parts.append("4. Stay within word limits (2.5 words/second MAX)")
         prompt_parts.append("5. Alternate speakers naturally - respond to each other")
@@ -297,8 +297,8 @@ class CommentaryGenerator:
         """
         MIN_GAP = 0.5  # seconds (shorter for natural dialogue)
         MAX_GAP = 2.0  # seconds
-        MIN_DURATION = 3  # seconds
-        MAX_DURATION = 15  # seconds
+        MIN_DURATION = 10  # seconds
+        MAX_DURATION = 20  # seconds
 
         validated = []
 

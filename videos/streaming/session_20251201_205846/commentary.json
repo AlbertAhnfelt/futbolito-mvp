@@ -1,0 +1,40 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:01",
+      "end_time": "00:00:13",
+      "commentary": "Arjen Robben receives it in midfield, dribbling forward with purpose! A precise pass out wide to Rafinha on the right wing. Good control by Rafinha!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:15",
+      "end_time": "00:00:28",
+      "commentary": "That's brilliant from Rafinha! He penetrates the box with a low cross... AND SCHWEINSTEIGER! GOAL! What a finish by Bastian Schweinsteiger! Absolutely clinical!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:30",
+      "end_time": "00:00:46",
+      "commentary": "Bastian Schweinsteiger celebrates with immense joy, arms raised towards the stands! Teammates rush to embrace him. The crowd is absolutely ecstatic, red shirts jumping and waving scarves. A truly vibrant atmosphere!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:48",
+      "end_time": "00:01:00",
+      "commentary": "You can really feel that energy! The team is united in celebration, high fives and spirited hugs all around. That's what a crucial goal does for team spirit!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:58",
+      "end_time": "00:01:08",
+      "commentary": "The cross is in! What a header! Goal! Player #31 powers it into the top left! Absolutely unstoppable! What a finish!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:10",
+      "end_time": "00:01:20",
+      "commentary": "Unbelievable! That header had power and incredible precision. Player #31 rose perfectly. The keeper had no chance. What a brilliant goal to start!",
+      "speaker": "COMMENTATOR_2"
+    }
+  ]
+}
