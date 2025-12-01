@@ -1,0 +1,34 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:03",
+      "end_time": "00:00:15",
+      "commentary": "Player #10 drives! Through ball for #13! Cuts in, shoots! Blocked! Rebound to #25, finds #7! Shot deflects! #31 scores! GOAL! Top corner! Brilliant!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:17",
+      "end_time": "00:00:29",
+      "commentary": "Absolutely. That persistence paid off massively. What a critical breakthrough. The celebration shows exactly how much that goal means for their collective spirit.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:31",
+      "end_time": "00:00:44",
+      "commentary": "That goal has really lifted the spirit! Guardiola is focused, Alaba, Mandžukić embrace. Now, Bayern on the attack! Kroos to Ribéry! Quick shot! De Gea to his right, brilliant save! Keeps it out!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:46",
+      "end_time": "00:00:58",
+      "commentary": "Remarkable save from De Gea! Replay highlights Kroos's weighted pass and Ribéry's powerful strike. De Gea's full-stretch parry was world-class. Curiously, a Bayern goal was announced.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:00",
+      "end_time": "00:01:15",
+      "commentary": "And there it is again! Player #31! GOAL! An incredible header from close range! Top corner, past the diving keeper! What a finish! Absolute brilliance from Player #31! The crowd erupts!",
+      "speaker": "COMMENTATOR_1"
+    }
+  ]
+}

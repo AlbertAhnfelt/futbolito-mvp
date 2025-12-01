@@ -19,7 +19,7 @@ class TTSGenerator:
     # Default voice mappings for commentators
     DEFAULT_VOICES = {
         "COMMENTATOR_1": "nrD2uNU2IUYtedZegcGx",  # Lead commentator voice
-        "COMMENTATOR_2": "UalXHhfqFg6JugnheN0j",  # Analyst commentator voice (Patrick)
+        "COMMENTATOR_2": "st7NwhTPEzqo2riw7qWC",  # Analyst commentator voice (Patrick)
     }
     
     def __init__(
