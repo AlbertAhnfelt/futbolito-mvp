@@ -11,6 +11,13 @@ const apiClient = axios.create({
   },
 });
 
+// Type definition for the comment payload
+export interface CommentRequest {
+  comment: string;
+  video?: string;
+  timestamp?: string;
+}
+
 export const videoApi = {
   /**
    * Get list of available videos
@@ -68,6 +75,16 @@ export const matchContextApi = {
    */
   clearContext: async (): Promise<void> => {
     await apiClient.delete('/match-context');
+  },
+};
+
+// New API for handling User Comments
+export const commentApi = {
+  /**
+   * Send user feedback/comments to the backend
+   */
+  sendComment: async (payload: CommentRequest): Promise<void> => {
+    await apiClient.post('/feedback', payload);
   },
 };
 

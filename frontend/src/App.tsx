@@ -10,24 +10,29 @@ import {
   Card,
   Space,
   Progress,
-  Radio, // <--- 1. Imported Radio
+  Radio,
+  Input, // <--- Imported Input
+  message, // <--- Imported message for notifications
 } from 'antd';
-import { PlayCircleOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, ThunderboltOutlined, SendOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { videoApi } from './services/api';
+import { videoApi, commentApi } from './services/api';
 import type { Highlight, Event, StreamEvent, VideoChunk } from './types';
 import { MatchContextForm } from './components/MatchContextForm';
 import './App.css';
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
+const { TextArea } = Input; // <--- Destructure TextArea
 
 function App() {
   const [videos, setVideos] = useState<string[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<string>('');
+  const [language, setLanguage] = useState<string>('English');
   
-  // 2. Added state for Language Selection
-  const [language, setLanguage] = useState<string>('English'); 
+  // Feedback State
+  const [userComment, setUserComment] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
 
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -72,12 +77,10 @@ function App() {
       return;
     }
 
-    // Close any existing EventSource
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
     }
 
-    // Reset state
     setAnalyzing(true);
     setError('');
     setHighlights([]);
@@ -86,12 +89,10 @@ function App() {
     setChunks([]);
     setCurrentChunkIndex(0);
     setProgress(0);
-    setStatusMessage(`Starting analysis in ${language}...`); // Updated message
+    setStatusMessage(`Starting analysis in ${language}...`);
     setIsComplete(false);
 
-    // Create EventSource for streaming
-    // NOTE: You will likely need to update your API to accept the language param
-    // e.g., videoApi.analyzeVideoStream(selectedVideo, language);
+    // Note: Ensure your backend accepts the language parameter if needed
     const eventSource = videoApi.analyzeVideoStream(selectedVideo,language);
     eventSourceRef.current = eventSource;
 
@@ -101,50 +102,36 @@ function App() {
 
         switch (data.type) {
           case 'status':
-            console.log('Status:', data.message);
             setStatusMessage(data.message);
             setProgress(data.progress);
             break;
 
           case 'chunk_ready':
-            console.log('Chunk ready:', data.index, data.url);
-
-            // Add chunk to list
             const newChunk: VideoChunk = {
               index: data.index,
               url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}${data.url}`,
               startTime: data.start_time,
               endTime: data.end_time,
             };
-
-            console.log('Full chunk URL:', newChunk.url);
-
             setChunks((prev) => [...prev, newChunk]);
             setProgress(data.progress);
             break;
 
           case 'complete':
-            console.log('Processing complete:', data.chunks, 'chunks');
             setIsComplete(true);
             setProgress(100);
             setStatusMessage('Complete!');
             setGeneratedVideo(data.final_video);
-
-            // Fetch events and commentary
+            
             videoApi.getEvents()
-              .then((eventsData) => {
-                setEvents(eventsData.events || []);
-              })
-              .catch((err) => {
-                console.warn('Could not load events:', err);
-              });
+              .then((eventsData) => setEvents(eventsData.events || []))
+              .catch((err) => console.warn('Could not load events:', err));
 
             eventSource.close();
             setAnalyzing(false);
             break;
 
           case 'error':
-            console.error('Processing error:', data.message);
             setError(`Error: ${data.message}`);
             setStatusMessage(`Error: ${data.message}`);
             eventSource.close();
@@ -166,43 +153,28 @@ function App() {
     };
   };
 
-  // Handle video ended - play next chunk
   const handleVideoEnded = () => {
     const nextIndex = currentChunkIndex + 1;
-
     if (nextIndex < chunks.length) {
-      // Play next chunk
       const nextChunk = chunks[nextIndex];
       if (videoRef.current) {
-        console.log('Playing next chunk:', nextChunk.url);
         videoRef.current.src = nextChunk.url;
-        videoRef.current.load(); // Explicitly load the video
-        videoRef.current.play().catch((err) => {
-          console.warn('Error playing next chunk:', err);
-        });
+        videoRef.current.load();
+        videoRef.current.play().catch((err) => console.warn('Error playing next chunk:', err));
       }
       setCurrentChunkIndex(nextIndex);
-    } else if (isComplete) {
-      console.log('Playback complete');
-    } else {
-      console.log('Waiting for next chunk...');
     }
   };
 
-  // Set video source when first chunk is available
   useEffect(() => {
     if (chunks.length > 0 && videoRef.current && !videoRef.current.src) {
       const firstChunk = chunks[0];
-      console.log('useEffect: Setting video source to first chunk:', firstChunk.url);
       videoRef.current.src = firstChunk.url;
       videoRef.current.load();
-      videoRef.current.play().catch((err) => {
-        console.warn('Autoplay prevented:', err);
-      });
+      videoRef.current.play().catch((err) => console.warn('Autoplay prevented:', err));
     }
   }, [chunks, videoRef.current]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -210,6 +182,31 @@ function App() {
       }
     };
   }, []);
+
+  // New function to handle comment submission
+  const handleSubmitComment = async () => {
+    if (!userComment.trim()) {
+      message.warning('Please write a comment before sending.');
+      return;
+    }
+
+    setSubmittingComment(true);
+    try {
+      await commentApi.sendComment({
+        comment: userComment,
+        video: selectedVideo,
+        timestamp: new Date().toISOString()
+      });
+
+      message.success('Thank you! Your feedback has been sent.');
+      setUserComment('');
+    } catch (error) {
+      console.error('Error sending feedback:', error);
+      message.error('Network error. Could not send feedback.');
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
 
   const eventsColumns: ColumnsType<Event> = [
     { title: 'Event Time', dataIndex: 'time', key: 'time', width: 100 },
@@ -258,10 +255,8 @@ function App() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <MatchContextForm />
 
-          <Card
-            style={{ marginBottom: 24, borderRadius: 8 }}
-            bordered={false}
-          >
+          {/* Main Controls Card */}
+          <Card style={{ marginBottom: 24, borderRadius: 8 }} bordered={false}>
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <div>
                 <Text strong style={{ fontSize: 16, color: '#1e4d2b' }}>
@@ -269,7 +264,6 @@ function App() {
                 </Text>
               </div>
 
-              {/* Video Selection */}
               <Select
                 placeholder={loading ? 'Loading videos...' : 'Select a video...'}
                 style={{ width: '100%' }}
@@ -284,7 +278,6 @@ function App() {
                 size="large"
               />
 
-              {/* 3. NEW SECTION: Language Selection Buttons */}
               <div>
                 <Text strong style={{ display: 'block', marginBottom: 8, color: '#1e4d2b' }}>
                   Commentary Language
@@ -298,26 +291,15 @@ function App() {
                   style={{ width: '100%' }}
                 >
                   <Space size="large">
-                    <Radio.Button value="English" style={{ minWidth: 120, textAlign: 'center' }}>
-                      English
-                    </Radio.Button>
-                    <Radio.Button value="French" style={{ minWidth: 120, textAlign: 'center' }}>
-                      French
-                    </Radio.Button>
-                    <Radio.Button value="Spanish" style={{ minWidth: 120, textAlign: 'center' }}>
-                      Spanish
-                    </Radio.Button>
-                    <Radio.Button value="Swedish" style={{ minWidth: 120, textAlign: 'center' }}>
-                      Swedish
-                    </Radio.Button>
-                    <Radio.Button value="Korean" style={{ minWidth: 120, textAlign: 'center' }}>
-                      Korean
-                    </Radio.Button>
+                    <Radio.Button value="English" style={{ minWidth: 120, textAlign: 'center' }}>English</Radio.Button>
+                    <Radio.Button value="French" style={{ minWidth: 120, textAlign: 'center' }}>French</Radio.Button>
+                    <Radio.Button value="Spanish" style={{ minWidth: 120, textAlign: 'center' }}>Spanish</Radio.Button>
+                    <Radio.Button value="Swedish" style={{ minWidth: 120, textAlign: 'center' }}>Swedish</Radio.Button>
+                    <Radio.Button value="Korean" style={{ minWidth: 120, textAlign: 'center' }}>Korean</Radio.Button>
                   </Space>
                 </Radio.Group>
               </div>
 
-              {/* Analyze Button */}
               <Button
                 type="primary"
                 size="large"
@@ -346,7 +328,6 @@ function App() {
             </Space>
           </Card>
 
-          {/* Error Display */}
           {error && (
             <Alert
               message="Error"
@@ -359,7 +340,6 @@ function App() {
             />
           )}
 
-          {/* Progress Display */}
           {analyzing && (
             <Card style={{ marginBottom: 24 }}>
               <Space direction="vertical" size="middle" style={{ width: '100%' }}>
@@ -400,7 +380,6 @@ function App() {
             />
           )}
 
-          {/* Video Player */}
           {(chunks.length > 0 || generatedVideo) && (
             <Card
               title={
@@ -423,7 +402,6 @@ function App() {
             </Card>
           )}
 
-          {/* Events Tables */}
           {highlights.length > 0 && !analyzing && (
             <Card
               title={
@@ -459,6 +437,40 @@ function App() {
               </div>
             </Card>
           )}
+
+          {/* NEW SECTION: Feedback / Comments */}
+          <Card
+            title={
+              <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
+                Feedback & Comments
+              </Title>
+            }
+            style={{ borderRadius: 8, marginBottom: 24 }}
+          >
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Text>Have suggestions or found an issue? Let us know!</Text>
+              <TextArea
+                rows={4}
+                value={userComment}
+                onChange={(e) => setUserComment(e.target.value)}
+                placeholder="Write your comments here..."
+                maxLength={500}
+                showCount
+              />
+              <div style={{ textAlign: 'right' }}>
+                <Button 
+                  type="primary" 
+                  icon={<SendOutlined />} 
+                  onClick={handleSubmitComment}
+                  loading={submittingComment}
+                  style={{ background: '#1e4d2b', borderColor: '#1e4d2b' }}
+                >
+                  Send Feedback
+                </Button>
+              </div>
+            </Space>
+          </Card>
+
         </div>
       </Content>
 
