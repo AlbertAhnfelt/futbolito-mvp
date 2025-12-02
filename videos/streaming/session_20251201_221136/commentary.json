@@ -1,0 +1,40 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:02",
+      "end_time": "00:00:18",
+      "commentary": "Player #10 dribbles, finds Rafinha on the right. Cross blocked! The ball deflects, creating a scramble! And Player #10 is there! He fires a low shot! GOOOOOAL! What a goal for Bayern Munich! The stadium is absolutely electric! Player #10 celebrating with Rafinha! Incredible scenes!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:20",
+      "end_time": "00:00:40",
+      "commentary": "What a moment! You can feel that incredible surge of energy from the home support. This equalizer has completely electrified the stadium, and the crowd in red are roaring their team on. This kind of atmosphere can absolutely be a game-changer, especially at this critical point.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:41",
+      "end_time": "00:00:55",
+      "commentary": "Robben on the left, drives into the box! Cuts inside, feeds Ribéry! Ribéry with a powerful low shot! But a brilliant diving save from the Manchester United goalkeeper! What a stop!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:57",
+      "end_time": "00:01:15",
+      "commentary": "That shot of Guardiola really highlights the pressure. His concern is clearly mirrored by his players, like Bastian Schweinsteiger and David Alaba, showing that collective intensity. This isn't just about individual performances; it's about the team's tactical discipline in a crucial phase. They're likely discussing specific adjustments or reaffirming their defensive shape after a critical moment.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:17",
+      "end_time": "00:01:34",
+      "commentary": "A very serious atmosphere for Bayern Munich right now. You can see Bastian Schweinsteiger and David Alaba, focused and intense. They're in a huddle, reacting to the match's pressure. Pep Guardiola on the sidelines shares that intense focus.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:36",
+      "end_time": "00:01:52",
+      "commentary": "That's an incredible strike by Player 31! The power and accuracy to hit the underside of the crossbar gave the keeper no chance. His technique and body shape were impeccable. The replay confirms it was clearly over the line – a brilliant, decisive finish.",
+      "speaker": "COMMENTATOR_2"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:03",
+      "end_time": "00:00:14",
+      "commentary": "Player 10 dribbles forward! Finds Player 13 on the right. A fantastic low cross comes in... GOAL! Player 7 with the finish! What a strike! The crowd is roaring!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:16",
+      "end_time": "00:00:36",
+      "commentary": "Absolutely, the atmosphere is electric! That finish from Player 7 was clinical, showcasing great composure under pressure. The surge of energy from these supporters is incredible, a testament to how crucial this goal is. And the players' celebration, that close huddle, speaks volumes about their unity and belief.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:00:38",
+      "end_time": "00:00:49",
+      "commentary": "Bayern attack again! Dribble on the right, pass to Franck Ribery inside the box! He shoots low! David de Gea stretches and makes a massive diving save! Brilliant!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:51",
+      "end_time": "00:01:03",
+      "commentary": "That De Gea save was excellent, a crucial stop. Now, the replay of Bastian Schweinsteiger's header. Pure power and precision from the corner. His movement was key, beating Fellaini. Technically superb.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:05",
+      "end_time": "00:01:16",
+      "commentary": "And what a sight! The absolute joy from Bastian Schweinsteiger, David Alaba, and Mario Mandžukić! Pure emotion, celebrating that crucial goal together. Incredible unity!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:18",
+      "end_time": "00:01:33",
+      "commentary": "Absolutely. That visible unity and emotional connection are crucial in big games. It highlights a collective belief, galvanizing the entire squad. This isn't just a goal; it's a powerful statement, reinforcing their confidence and psychological momentum.",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:35",
+      "end_time": "00:01:54",
+      "commentary": "Indeed, that collective belief fuels momentum! And on that note, let's relive some incredible moments! A stunning strike, deflecting off the crossbar and in! The crowd erupts! Then, a powerful shot flies towards goal. And what a phenomenal full-stretch diving save from the keeper! Truly spectacular!",
+      "speaker": "COMMENTATOR_1"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "commentaries": [
+    {
+      "start_time": "00:00:33",
+      "end_time": "00:00:47",
+      "commentary": "Unbelievable scenes here! Zlatan Ibrahimović, shirt off, celebrating with his teammates after an absolutely stunning goal! What a way to put Sweden up 4-2 in the dying moments against England!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:00:49",
+      "end_time": "00:01:02",
+      "commentary": "Absolutely incredible! To attempt that from 30 yards, a bicycle kick over Joe Hart! Pure genius from Zlatan Ibrahimović! You just don't see goals like this! Unbelievable!",
+      "speaker": "COMMENTATOR_2"
+    },
+    {
+      "start_time": "00:01:04",
+      "end_time": "00:01:14",
+      "commentary": "And here's another look! The ball comes in, Zlatan Ibrahimović connects perfectly! It arches beautifully over Joe Hart, right into the top corner.",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:03",
+      "end_time": "00:01:15",
+      "commentary": "Oh, what a chance! Player 9 was right there, a scramble in front of goal! The ball just trickled past the post. Unbelievable!",
+      "speaker": "COMMENTATOR_1"
+    },
+    {
+      "start_time": "00:01:17",
+      "end_time": "00:01:28",
+      "commentary": "He just couldn't quite connect! Player 1 had it covered though, brilliant positioning. That was incredibly close to an opening goal!",
+      "speaker": "COMMENTATOR_2"
+    }
+  ]
+}

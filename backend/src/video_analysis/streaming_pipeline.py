@@ -1,15 +1,17 @@
 """
 Real-time streaming pipeline for video commentary generation.
 
-Implements a producer-consumer pattern with async queues to stream video chunks
-as soon as commentary is generated, enabling playback to start while generation continues.
+Implements a fully sequential producer-consumer pattern with async queues to stream
+video chunks as soon as each commentary is generated, enabling true progressive streaming.
 
 Pipeline stages:
 1. Event Detection (streaming per 30s interval) → event_queue
 2. Commentary Generation (per interval) → commentary_queue
-3. TTS Audio Generation (parallel) → audio_queue
-4. Video Chunk Creation → chunk_queue
-5. SSE Event Emission → frontend
+3. Sequential TTS + Chunk Creation (one at a time) → chunk_queue
+4. SSE Event Emission → frontend
+
+Each chunk is created immediately after its TTS completes, ensuring the fastest
+possible delivery to the frontend for true progressive playback.
 """
 
 import asyncio
@@ -39,8 +41,10 @@ class StreamingPipeline:
     Uses async queues to connect pipeline stages:
     - Event Queue: Detected events per 30s interval
     - Commentary Queue: Generated commentary per interval
-    - Audio Queue: TTS audio for each commentary
-    - Chunk Queue: Video chunks ready for streaming
+    - Chunk Queue: Video chunks ready for streaming (created immediately after TTS)
+
+    Sequential processing ensures chunks are delivered in chronological order
+    without the need for sorting, with each chunk arriving as soon as possible.
     """
 
     def __init__(self, api_key: str, elevenlabs_api_key: Optional[str] = None, language = "English"):
@@ -218,7 +222,6 @@ class StreamingPipeline:
             # Step 4: Create async queues
             event_queue = asyncio.Queue()
             commentary_queue = asyncio.Queue()
-            audio_queue = asyncio.Queue()
             chunk_queue = asyncio.Queue()
             sse_event_queue = asyncio.Queue()  # For progress events from all stages
 
@@ -234,10 +237,7 @@ class StreamingPipeline:
                     self._generate_commentary_streaming(event_queue, commentary_queue, sse_event_queue)
                 ),
                 asyncio.create_task(
-                    self._generate_audio_parallel(commentary_queue, audio_queue)
-                ),
-                asyncio.create_task(
-                    self._create_video_chunks(audio_queue, chunk_queue, video_path_with_audio)
+                    self._generate_audio_and_chunks_sequential(commentary_queue, chunk_queue, video_path_with_audio)
                 ),
             ]
 
@@ -332,7 +332,7 @@ class StreamingPipeline:
             final_video = await self._create_final_video(chunk_index)
 
             # Completion event
-            final_video_url = f'/videos/generated/{final_video}' if final_video else ''
+            final_video_url = f'/videos/streaming/{self.session_id}/{final_video}' if final_video else ''
             yield {
                 'type': 'complete',
                 'chunks': chunk_index,
@@ -423,7 +423,8 @@ class StreamingPipeline:
         sse_event_queue: asyncio.Queue
     ):
         """
-        Stage 2: Generate commentary for each interval immediately.
+        Stage 2: Generate 10-20 second commentaries with separate API calls.
+        Each commentary can cover multiple events and responds to previous commentaries.
 
         Args:
             event_queue: Input queue with detected events
@@ -431,9 +432,14 @@ class StreamingPipeline:
             sse_event_queue: Queue to push SSE progress events
         """
         try:
-            print(f"[STREAMING] Starting commentary generation...")
+            print(f"[STREAMING] Starting commentary generation (one API call per commentary, 10-20s each, conversational flow)...")
 
             interval_index = 0
+            previous_commentary_end = None
+            commentary_count = 0
+
+            # Track all generated commentaries for conversational context
+            all_commentaries = []
 
             while True:
                 event_batch = await event_queue.get()
@@ -445,31 +451,50 @@ class StreamingPipeline:
                 interval = event_batch['interval']
                 events = event_batch['events']
 
-                print(f"[STREAMING] Generating commentary for interval {interval} ({len(events)} events)")
+                print(f"[STREAMING] Processing interval {interval} with {len(events)} events")
 
                 if not events:
                     print(f"[STREAMING] No events in interval {interval}, skipping commentary")
                     interval_index += 1
                     continue
 
-                # Generate commentary for just these events
-                # NOTE: generate_commentary is now async and saves to StateManager internally
-                try:
-                    commentaries = await self.commentary_generator.generate_commentary(
-                        events=[e.model_dump() for e in events],
-                        video_duration=self.video_duration,  # Use FULL video duration, not interval end
-                        use_streaming=False
-                    )
+                # Convert events to dicts
+                event_dicts = [e.model_dump() for e in events]
+                events_covered = set()
 
-                    # Push each commentary to queue immediately
-                    # StateManager has already saved them via generate_commentary -> _save_commentaries
-                    for commentary in commentaries:
+                # Generate commentaries until all events are covered
+                while len(events_covered) < len(event_dicts):
+                    try:
+                        # Alternate between commentators
+                        speaker = "COMMENTATOR_1" if commentary_count % 2 == 0 else "COMMENTATOR_2"
+
+                        # Generate single 10-20s commentary covering multiple events
+                        # Pass all previous commentaries for conversational context
+                        commentary, newly_covered = await self.commentary_generator.generate_single_commentary(
+                            events=event_dicts,
+                            events_covered=events_covered,
+                            speaker=speaker,
+                            previous_commentaries=all_commentaries,
+                            previous_commentary_end=previous_commentary_end,
+                            video_duration=self.video_duration
+                        )
+
+                        # Update covered events
+                        events_covered.update(newly_covered)
+
+                        # Add to our list for future context
+                        all_commentaries.append(commentary)
+
+                        # Save to StateManager
+                        await self.state_manager.add_commentaries([commentary.model_dump()])
+
+                        # Push to queue immediately
                         await commentary_queue.put({
                             'commentary': commentary,
                             'interval_index': interval_index
                         })
 
-                        print(f"[STREAMING] Pushed commentary to queue: {commentary.start_time} - {commentary.end_time}")
+                        print(f"[STREAMING] Pushed commentary to queue: {commentary.start_time} - {commentary.end_time} ({speaker})")
 
                         # Emit SSE event for progress tracking
                         await sse_event_queue.put({
@@ -479,18 +504,28 @@ class StreamingPipeline:
                             'end': commentary.end_time
                         })
 
-                except Exception as e:
-                    print(f"[STREAMING] Commentary generation failed for interval {interval}: {e}")
-                    import traceback
-                    traceback.print_exc()
-                    # Continue with next interval even if this one fails
+                        # Update tracking variables
+                        previous_commentary_end = commentary.end_time
+                        commentary_count += 1
+
+                        # Safety check: if no events were covered, break to avoid infinite loop
+                        if not newly_covered:
+                            print(f"[STREAMING] Warning: No events covered in last commentary, moving to next interval")
+                            break
+
+                    except Exception as e:
+                        print(f"[STREAMING] Commentary generation failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        # Break out of the loop to avoid infinite retries on same events
+                        break
 
                 interval_index += 1
 
             # Signal completion
             await commentary_queue.put(None)
             await sse_event_queue.put(None)  # Signal SSE stream completion
-            print(f"[STREAMING] Commentary generation completed - all commentaries saved to StateManager")
+            print(f"[STREAMING] Commentary generation completed - {commentary_count} commentaries generated (one API call each, 10-20s duration, conversational flow)")
 
         except Exception as e:
             print(f"[STREAMING] Commentary generation error: {e}")
@@ -498,38 +533,39 @@ class StreamingPipeline:
             await commentary_queue.put(None)
             await sse_event_queue.put(None)  # Signal SSE stream completion even on error
 
-    async def _generate_audio_parallel(
+    async def _generate_audio_and_chunks_sequential(
         self,
         commentary_queue: asyncio.Queue,
-        audio_queue: asyncio.Queue
+        chunk_queue: asyncio.Queue,
+        video_path: Path
     ):
         """
-        Stage 3: Generate TTS audio in parallel (up to 5 concurrent requests).
+        Stage 3: Generate TTS audio and create video chunks sequentially.
+
+        For each commentary:
+        1. Generate TTS audio
+        2. Immediately create video chunk
+        3. Push chunk to queue
+        4. Move to next commentary
+
+        This ensures true progressive streaming where chunks are delivered
+        as soon as possible without waiting for other TTS to complete.
 
         Args:
             commentary_queue: Input queue with commentaries
-            audio_queue: Output queue for audio data
+            chunk_queue: Output queue for video chunks
+            video_path: Path to original video
         """
         try:
-            print(f"[STREAMING] Starting TTS generation...")
+            print(f"[STREAMING] Starting sequential TTS + chunk creation...")
 
-            if not self.tts_generator:
-                print(f"[STREAMING] No TTS generator available, skipping audio generation")
-                while True:
-                    commentary_data = await commentary_queue.get()
-                    if commentary_data is None:
-                        break
-                    # Pass through without audio
-                    await audio_queue.put({
-                        'commentary': commentary_data['commentary'],
-                        'audio_base64': None,
-                        'interval_index': commentary_data['interval_index']
-                    })
-                await audio_queue.put(None)
-                return
+            # Create output directory for chunks
+            videos_dir = Path(__file__).parent.parent.parent.parent / 'videos'
+            streaming_dir = videos_dir / 'streaming' / self.session_id
+            streaming_dir.mkdir(exist_ok=True, parents=True)
 
-            tasks = set()
-            max_concurrent = 5  # ElevenLabs rate limit
+            chunk_index = 0
+            chunk_start = 0.0  # First chunk always starts at video beginning
 
             while True:
                 commentary_data = await commentary_queue.get()
@@ -541,133 +577,29 @@ class StreamingPipeline:
                 commentary = commentary_data['commentary']
                 interval_index = commentary_data['interval_index']
 
-                print(f"[STREAMING] Creating TTS task for: {commentary.start_time} - {commentary.end_time}")
+                print(f"[STREAMING] Processing commentary {chunk_index}: {commentary.start_time} - {commentary.end_time}")
 
-                # Create task for this TTS request
-                task = asyncio.create_task(
-                    self._generate_single_audio(commentary, interval_index, audio_queue)
-                )
-                tasks.add(task)
+                # Step 1: Generate TTS audio
+                audio_base64 = None
+                if self.tts_generator:
+                    try:
+                        print(f"[STREAMING] Generating TTS for: {commentary.commentary[:50]}...")
+                        audio_base64 = await asyncio.to_thread(
+                            self.tts_generator.generate_audio,
+                            commentary.commentary,
+                            commentary.speaker
+                        )
+                        if audio_base64:
+                            print(f"[STREAMING] TTS completed ({len(audio_base64)} chars)")
+                        else:
+                            print(f"[STREAMING] TTS returned empty audio")
+                    except Exception as e:
+                        print(f"[STREAMING] TTS generation failed: {e}")
+                        audio_base64 = None
+                else:
+                    print(f"[STREAMING] No TTS generator available, skipping audio generation")
 
-                # Limit concurrency
-                if len(tasks) >= max_concurrent:
-                    done, tasks = await asyncio.wait(
-                        tasks, return_when=asyncio.FIRST_COMPLETED
-                    )
-
-            # Wait for remaining tasks
-            if tasks:
-                await asyncio.gather(*tasks, return_exceptions=True)
-
-            # Signal completion
-            await audio_queue.put(None)
-            print(f"[STREAMING] TTS generation completed")
-
-        except Exception as e:
-            print(f"[STREAMING] TTS generation error: {e}")
-            print(traceback.format_exc())
-            await audio_queue.put(None)
-
-    async def _generate_single_audio(
-        self,
-        commentary,
-        interval_index: int,
-        audio_queue: asyncio.Queue
-    ):
-        """
-        Generate audio for a single commentary and push to queue.
-
-        Args:
-            commentary: Commentary object
-            interval_index: Index of the interval
-            audio_queue: Queue to push audio data
-        """
-        try:
-            print(f"[STREAMING] Generating TTS for: {commentary.commentary[:50]}...")
-
-            # Generate audio (run in thread to avoid blocking)
-            audio_base64 = await asyncio.to_thread(
-                self.tts_generator.generate_audio,
-                commentary.commentary,
-                commentary.speaker
-            )
-
-            if audio_base64:
-                print(f"[STREAMING] TTS completed ({len(audio_base64)} chars)")
-            else:
-                print(f"[STREAMING] TTS returned empty audio")
-
-            await audio_queue.put({
-                'commentary': commentary,
-                'audio_base64': audio_base64,
-                'interval_index': interval_index
-            })
-
-        except Exception as e:
-            print(f"[STREAMING] TTS generation failed: {e}")
-            # Push without audio
-            await audio_queue.put({
-                'commentary': commentary,
-                'audio_base64': None,
-                'interval_index': interval_index
-            })
-
-    async def _create_video_chunks(
-        self,
-        audio_queue: asyncio.Queue,
-        chunk_queue: asyncio.Queue,
-        video_path: Path
-    ):
-        """
-        Stage 4: Create continuous video chunks with no gaps.
-
-        Each chunk spans from the previous chunk's end to the current commentary's end_time,
-        ensuring full video coverage:
-        - Chunk 0: [0, commentary_1.end_time] with commentary_1 overlaid
-        - Chunk 1: [commentary_1.end_time, commentary_2.end_time] with commentary_2 overlaid
-        - Chunk N: [commentary_N-1.end_time, commentary_N.end_time] with commentary_N overlaid
-        - Final: [last_end_time, video_duration] with no commentary
-
-        Note: Collects all commentaries first and sorts by start_time to ensure
-        chronological chunk creation, even when TTS completes out of order.
-
-        Args:
-            audio_queue: Input queue with audio data
-            chunk_queue: Output queue for video chunks
-            video_path: Path to original video
-        """
-        try:
-            print(f"[STREAMING] Starting video chunk creation...")
-
-            # Create output directory for chunks
-            videos_dir = Path(__file__).parent.parent.parent.parent / 'videos'
-            streaming_dir = videos_dir / 'streaming' / self.session_id
-            streaming_dir.mkdir(exist_ok=True, parents=True)
-
-            # Stage 1: Collect all commentaries from the parallel TTS queue
-            # (they arrive in completion order, not chronological order)
-            commentaries = []
-            while True:
-                audio_data = await audio_queue.get()
-                if audio_data is None:
-                    break
-                commentaries.append(audio_data)
-
-            print(f"[STREAMING] Collected {len(commentaries)} commentaries, sorting chronologically...")
-
-            # Stage 2: Sort by start_time to ensure correct chunk boundaries
-            # This is critical because parallel TTS completes out of order
-            commentaries.sort(key=lambda x: parse_time_to_seconds(x['commentary'].start_time))
-
-            # Stage 3: Create chunks in chronological order
-            chunk_index = 0
-            chunk_start = 0.0  # First chunk always starts at video beginning
-
-            for audio_data in commentaries:
-                commentary = audio_data['commentary']
-                audio_base64 = audio_data['audio_base64']
-
-                # Chunk ends at this commentary's end_time
+                # Step 2: Immediately create video chunk
                 chunk_end = parse_time_to_seconds(commentary.end_time)
 
                 # Validate chunk duration (skip if too small or zero)
@@ -680,7 +612,6 @@ class StreamingPipeline:
 
                 try:
                     # Create chunk from chunk_start to chunk_end
-                    # Commentary will be overlaid at its specific time within the chunk
                     chunk_path = await asyncio.to_thread(
                         self._create_single_chunk,
                         video_path,
@@ -695,6 +626,7 @@ class StreamingPipeline:
                     # Generate URL for frontend
                     chunk_url = f"/videos/streaming/{self.session_id}/chunk_{chunk_index}.mp4"
 
+                    # Step 3: Push chunk to queue immediately
                     await chunk_queue.put({
                         'path': chunk_path,
                         'url': chunk_url,
@@ -703,7 +635,7 @@ class StreamingPipeline:
                         'end_time': seconds_to_time(chunk_end)
                     })
 
-                    print(f"[STREAMING] Chunk {chunk_index} ready: {chunk_url}")
+                    print(f"[STREAMING] Chunk {chunk_index} ready and pushed to queue: {chunk_url}")
 
                     # Next chunk starts where this one ended
                     chunk_start = chunk_end
@@ -712,10 +644,10 @@ class StreamingPipeline:
                 except Exception as e:
                     print(f"[STREAMING] Chunk creation failed for index {chunk_index}: {e}")
                     print(traceback.format_exc())
-                    # Continue with next chunk even if this one fails
+                    # Continue with next commentary even if this one fails
                     continue
 
-            # Stage 4: Create final chunk from last commentary end to video end
+            # Create final chunk from last commentary end to video end
             final_chunk_duration = self.video_duration - chunk_start
             if chunk_start <= self.video_duration and final_chunk_duration >= 0.1:
                 print(f"[STREAMING] Creating final chunk {chunk_index}: {seconds_to_time(chunk_start)} - {seconds_to_time(self.video_duration)}")
@@ -751,10 +683,10 @@ class StreamingPipeline:
 
             # Signal completion
             await chunk_queue.put(None)
-            print(f"[STREAMING] Video chunk creation completed ({chunk_index} chunks)")
+            print(f"[STREAMING] Sequential TTS + chunk creation completed ({chunk_index} chunks)")
 
         except Exception as e:
-            print(f"[STREAMING] Chunk creation error: {e}")
+            print(f"[STREAMING] Sequential TTS + chunk creation error: {e}")
             print(traceback.format_exc())
             await chunk_queue.put(None)
 
@@ -903,14 +835,9 @@ class StreamingPipeline:
                     if chunk_path.exists():
                         f.write(f"file '{chunk_path.absolute()}'\n")
 
-            # Output path
-            output_dir = videos_dir / 'generated-videos'
-            output_dir.mkdir(exist_ok=True, parents=True)
-
-            from datetime import datetime
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_filename = f"commentary_{timestamp}.mp4"
-            output_path = output_dir / output_filename
+            # Output path - save in session folder
+            output_filename = f"final_video.mp4"
+            output_path = streaming_dir / output_filename
 
             # Concatenate chunks
             cmd = [
@@ -934,7 +861,7 @@ class StreamingPipeline:
                 print(f"[STREAMING] Final video creation failed: {result.stderr}")
                 return ""
 
-            print(f"[STREAMING] Final video created: {output_filename}")
+            print(f"[STREAMING] Final video created: {output_path}")
             return output_filename
 
         except Exception as e:

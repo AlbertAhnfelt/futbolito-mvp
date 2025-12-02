@@ -1,0 +1,70 @@
+{
+  "events": [
+    {
+      "time": "00:00:02",
+      "description": "Bayern Munich Player #10 receives the ball in central midfield, dribbles forward with control towards the top of the penalty area, then delivers a precise pass to Rafinha (#13) on the right wing. Rafinha (#13) attempts to cross the ball into the penalty box, but a Manchester United defender executes a quick sliding block, deflecting the ball back towards the center of the box, creating a chaotic scramble.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:11",
+      "description": "Capitalizing on the deflected ball inside the penalty area, Bayern Munich Player #10 quickly controls it and fires a powerful, left-footed low shot from approximately 12 yards out directly into the back of the net, beating the Manchester United goalkeeper decisively to score a vital goal.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:00:12",
+      "description": "Following his goal, Bayern Munich Player #10 celebrates with immense joy, running towards the fans with his arms raised, before being joined by Rafinha (#13) and other Bayern Munich teammates in a tight group hug near the advertising boards, sharing their excitement and triumph.",
+      "replay": false,
+      "intensity": 9
+    },
+    {
+      "time": "00:00:24",
+      "description": "The stadium erupts as the camera captures a wide shot of the jubilant crowd, predominantly dressed in red, cheering wildly, waving flags and scarves, and raising their hands in unison to celebrate Bayern Munich's equalizer.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:31",
+      "description": "Bayern Munich coach Pep Guardiola is shown in the technical area alongside another coach, both displaying intense focus and concern during the match, leaning over the barrier.",
+      "replay": false,
+      "intensity": 3
+    },
+    {
+      "time": "00:00:35",
+      "description": "Bayern Munich players, including Bastian Schweinsteiger (#31) and David Alaba (#27), are seen walking on the field with serious and focused expressions, possibly in a huddle or reacting to a recent significant event.",
+      "replay": false,
+      "intensity": 6
+    },
+    {
+      "time": "00:00:41",
+      "description": "In live action, Bayern Munich's Arjen Robben (#10) dribbles the ball on the left side of the penalty area, cuts inside, and delivers a precise pass to Franck Ribéry (#7). Ribéry receives the ball inside the 18-yard box and immediately unleashes a powerful, low drive towards the bottom left corner of the goal, which is skillfully saved by the Manchester United goalkeeper, who dives to his right to parry the ball away.",
+      "replay": false,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:51",
+      "description": "A replay of the previous play shows Franck Ribéry (#7) receiving the pass from Arjen Robben (#10) and taking a powerful low shot from inside the penalty area. The Manchester United goalkeeper makes a crucial diving save, pushing the ball wide to prevent a goal.",
+      "replay": true,
+      "intensity": 8
+    },
+    {
+      "time": "00:00:56",
+      "description": "A second replay from a perspective behind the goal captures Franck Ribéry's (#7) close-range shot and the Manchester United goalkeeper's quick reaction to make the save. Immediately after the save, Manchester United's Marouane Fellaini (#31) quickly clears the ball out of the danger area. An on-screen graphic simultaneously appears, stating \"Neue Spielstand. Tor von FC Bayern.\" (New score. Goal by FC Bayern.), indicating a goal for Bayern Munich, despite the visual showing a save.",
+      "replay": true,
+      "intensity": 9
+    },
+    {
+      "time": "00:01:01",
+      "description": "Player #31, wearing a dark blue and red kit, strikes a powerful shot from inside the penalty box towards the goal. The ball deflects off the crossbar, bounces downwards, and crosses the goal line, resulting in a goal. The goalkeeper, wearing a green kit, dives desperately to his left side but is unable to make the save. Player #4, wearing a red kit, is also positioned near the goal line.",
+      "replay": false,
+      "intensity": 10
+    },
+    {
+      "time": "00:01:02",
+      "description": "A slow-motion replay from behind the goal provides a clear view of Player #31's shot. The ball strikes the underside of the crossbar with significant force before ricocheting down and clearly entering the net. The goalkeeper's full-stretch dive is shown in detail, highlighting his unsuccessful attempt to save the shot.",
+      "replay": true,
+      "intensity": 9
+    }
+  ]
+}
