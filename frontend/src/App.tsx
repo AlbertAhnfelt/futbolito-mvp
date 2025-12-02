@@ -10,20 +10,30 @@ import {
   Card,
   Space,
   Progress,
+  Radio,
+  Input, // <--- Imported Input
+  message, // <--- Imported message for notifications
 } from 'antd';
-import { PlayCircleOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, ThunderboltOutlined, SendOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { videoApi } from './services/api';
+import { videoApi, commentApi } from './services/api';
 import type { Highlight, Event, StreamEvent, VideoChunk } from './types';
 import { MatchContextForm } from './components/MatchContextForm';
 import './App.css';
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
+const { TextArea } = Input; // <--- Destructure TextArea
 
 function App() {
   const [videos, setVideos] = useState<string[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<string>('');
+  const [language, setLanguage] = useState<string>('English');
+  
+  // Feedback State
+  const [userComment, setUserComment] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
+
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [generatedVideo, setGeneratedVideo] = useState<string>('');
@@ -67,12 +77,10 @@ function App() {
       return;
     }
 
-    // Close any existing EventSource
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
     }
 
-    // Reset state
     setAnalyzing(true);
     setError('');
     setHighlights([]);
@@ -81,11 +89,11 @@ function App() {
     setChunks([]);
     setCurrentChunkIndex(0);
     setProgress(0);
-    setStatusMessage('Starting analysis...');
+    setStatusMessage(`Starting analysis in ${language}...`);
     setIsComplete(false);
 
-    // Create EventSource for streaming
-    const eventSource = videoApi.analyzeVideoStream(selectedVideo);
+    // Note: Ensure your backend accepts the language parameter if needed
+    const eventSource = videoApi.analyzeVideoStream(selectedVideo,language);
     eventSourceRef.current = eventSource;
 
     eventSource.onmessage = (event) => {
@@ -94,53 +102,36 @@ function App() {
 
         switch (data.type) {
           case 'status':
-            console.log('Status:', data.message);
             setStatusMessage(data.message);
             setProgress(data.progress);
             break;
 
           case 'chunk_ready':
-            console.log('Chunk ready:', data.index, data.url);
-
-            // Add chunk to list
             const newChunk: VideoChunk = {
               index: data.index,
               url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}${data.url}`,
               startTime: data.start_time,
               endTime: data.end_time,
             };
-
-            console.log('Full chunk URL:', newChunk.url);
-
             setChunks((prev) => [...prev, newChunk]);
-
-            // Video source will be set by useEffect once the video element is ready
-
             setProgress(data.progress);
             break;
 
           case 'complete':
-            console.log('Processing complete:', data.chunks, 'chunks');
             setIsComplete(true);
             setProgress(100);
             setStatusMessage('Complete!');
             setGeneratedVideo(data.final_video);
-
-            // Fetch events and commentary
+            
             videoApi.getEvents()
-              .then((eventsData) => {
-                setEvents(eventsData.events || []);
-              })
-              .catch((err) => {
-                console.warn('Could not load events:', err);
-              });
+              .then((eventsData) => setEvents(eventsData.events || []))
+              .catch((err) => console.warn('Could not load events:', err));
 
             eventSource.close();
             setAnalyzing(false);
             break;
 
           case 'error':
-            console.error('Processing error:', data.message);
             setError(`Error: ${data.message}`);
             setStatusMessage(`Error: ${data.message}`);
             eventSource.close();
@@ -162,45 +153,28 @@ function App() {
     };
   };
 
-  // Handle video ended - play next chunk
   const handleVideoEnded = () => {
     const nextIndex = currentChunkIndex + 1;
-
     if (nextIndex < chunks.length) {
-      // Play next chunk
       const nextChunk = chunks[nextIndex];
       if (videoRef.current) {
-        console.log('Playing next chunk:', nextChunk.url);
         videoRef.current.src = nextChunk.url;
-        videoRef.current.load(); // Explicitly load the video
-        videoRef.current.play().catch((err) => {
-          console.warn('Error playing next chunk:', err);
-        });
+        videoRef.current.load();
+        videoRef.current.play().catch((err) => console.warn('Error playing next chunk:', err));
       }
       setCurrentChunkIndex(nextIndex);
-    } else if (isComplete) {
-      // All chunks played and processing complete
-      console.log('Playback complete');
-    } else {
-      // Wait for next chunk to arrive
-      console.log('Waiting for next chunk...');
     }
   };
 
-  // Set video source when first chunk is available and video element is ready
   useEffect(() => {
     if (chunks.length > 0 && videoRef.current && !videoRef.current.src) {
       const firstChunk = chunks[0];
-      console.log('useEffect: Setting video source to first chunk:', firstChunk.url);
       videoRef.current.src = firstChunk.url;
       videoRef.current.load();
-      videoRef.current.play().catch((err) => {
-        console.warn('Autoplay prevented:', err);
-      });
+      videoRef.current.play().catch((err) => console.warn('Autoplay prevented:', err));
     }
   }, [chunks, videoRef.current]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -209,35 +183,39 @@ function App() {
     };
   }, []);
 
-  // Columns for events table (left)
+  // New function to handle comment submission
+  const handleSubmitComment = async () => {
+    if (!userComment.trim()) {
+      message.warning('Please write a comment before sending.');
+      return;
+    }
+
+    setSubmittingComment(true);
+    try {
+      await commentApi.sendComment({
+        comment: userComment,
+        video: selectedVideo,
+        timestamp: new Date().toISOString()
+      });
+
+      message.success('Thank you! Your feedback has been sent.');
+      setUserComment('');
+    } catch (error) {
+      console.error('Error sending feedback:', error);
+      message.error('Network error. Could not send feedback.');
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
   const eventsColumns: ColumnsType<Event> = [
-    {
-      title: 'Event Time',
-      dataIndex: 'time',
-      key: 'time',
-      width: 100,
-    },
-    {
-      title: 'Event Description',
-      dataIndex: 'description',
-      key: 'description',
-    },
+    { title: 'Event Time', dataIndex: 'time', key: 'time', width: 100 },
+    { title: 'Event Description', dataIndex: 'description', key: 'description' },
   ];
 
-  // Columns for highlights table (right)
   const highlightsColumns: ColumnsType<Highlight> = [
-    {
-      title: 'Start Time',
-      dataIndex: 'start_time',
-      key: 'start_time',
-      width: 100,
-    },
-    {
-      title: 'End Time',
-      dataIndex: 'end_time',
-      key: 'end_time',
-      width: 100,
-    },
+    { title: 'Start Time', dataIndex: 'start_time', key: 'start_time', width: 100 },
+    { title: 'End Time', dataIndex: 'end_time', key: 'end_time', width: 100 },
     {
       title: 'Commentary',
       dataIndex: 'commentary',
@@ -277,10 +255,8 @@ function App() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <MatchContextForm />
 
-          <Card
-            style={{ marginBottom: 24, borderRadius: 8 }}
-            bordered={false}
-          >
+          {/* Main Controls Card */}
+          <Card style={{ marginBottom: 24, borderRadius: 8 }} bordered={false}>
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <div>
                 <Text strong style={{ fontSize: 16, color: '#1e4d2b' }}>
@@ -288,38 +264,58 @@ function App() {
                 </Text>
               </div>
 
-              <Space size="middle" style={{ width: '100%' }}>
-                <Select
-                  placeholder={
-                    loading ? 'Loading videos...' : 'Select a video...'
-                  }
-                  style={{ minWidth: 300, flex: 1 }}
-                  value={selectedVideo || undefined}
-                  onChange={setSelectedVideo}
-                  loading={loading}
-                  disabled={loading || analyzing}
-                  options={videos.map((video) => ({
-                    label: video,
-                    value: video,
-                  }))}
-                  size="large"
-                />
+              <Select
+                placeholder={loading ? 'Loading videos...' : 'Select a video...'}
+                style={{ width: '100%' }}
+                value={selectedVideo || undefined}
+                onChange={setSelectedVideo}
+                loading={loading}
+                disabled={loading || analyzing}
+                options={videos.map((video) => ({
+                  label: video,
+                  value: video,
+                }))}
+                size="large"
+              />
 
-                <Button
-                  type="primary"
+              <div>
+                <Text strong style={{ display: 'block', marginBottom: 8, color: '#1e4d2b' }}>
+                  Commentary Language
+                </Text>
+                <Radio.Group 
+                  value={language} 
+                  onChange={(e) => setLanguage(e.target.value)}
                   size="large"
-                  icon={<PlayCircleOutlined />}
-                  onClick={handleAnalyze}
-                  loading={analyzing}
-                  disabled={!selectedVideo || analyzing}
-                  style={{
-                    background: '#6fbf8b',
-                    borderColor: '#6fbf8b',
-                  }}
+                  buttonStyle="solid"
+                  disabled={analyzing}
+                  style={{ width: '100%' }}
                 >
-                  {analyzing ? 'Analyzing...' : 'Analyze Video'}
-                </Button>
-              </Space>
+                  <Space size="large">
+                    <Radio.Button value="English" style={{ minWidth: 120, textAlign: 'center' }}>English</Radio.Button>
+                    <Radio.Button value="French" style={{ minWidth: 120, textAlign: 'center' }}>French</Radio.Button>
+                    <Radio.Button value="Spanish" style={{ minWidth: 120, textAlign: 'center' }}>Spanish</Radio.Button>
+                    <Radio.Button value="Swedish" style={{ minWidth: 120, textAlign: 'center' }}>Swedish</Radio.Button>
+                    <Radio.Button value="Korean" style={{ minWidth: 120, textAlign: 'center' }}>Korean</Radio.Button>
+                  </Space>
+                </Radio.Group>
+              </div>
+
+              <Button
+                type="primary"
+                size="large"
+                icon={<PlayCircleOutlined />}
+                onClick={handleAnalyze}
+                loading={analyzing}
+                disabled={!selectedVideo || analyzing}
+                style={{
+                  background: '#6fbf8b',
+                  borderColor: '#6fbf8b',
+                  width: '100%',
+                  marginTop: 8
+                }}
+              >
+                {analyzing ? 'Analyzing...' : `Analyze Video in ${language}`}
+              </Button>
 
               {videos.length === 0 && !loading && (
                 <Alert
@@ -355,10 +351,7 @@ function App() {
                 <Progress
                   percent={progress}
                   status={progress === 100 ? 'success' : 'active'}
-                  strokeColor={{
-                    '0%': '#6fbf8b',
-                    '100%': '#1e4d2b',
-                  }}
+                  strokeColor={{ '0%': '#6fbf8b', '100%': '#1e4d2b' }}
                 />
                 {chunks.length > 0 && (
                   <div>
@@ -387,8 +380,7 @@ function App() {
             />
           )}
 
-          {/* Final Complete Video Player - Show after all processing is done */}
-          {generatedVideo && !analyzing && isComplete && (
+          {(chunks.length > 0 || generatedVideo) && (
             <Card
               title={
                 <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
@@ -429,48 +421,26 @@ function App() {
                   ref={videoRef}
                   controls
                   onEnded={handleVideoEnded}
-                  onError={(e) => {
-                    console.error('Video error:', e);
-                    console.error('Video error details:', {
-                      error: videoRef.current?.error,
-                      networkState: videoRef.current?.networkState,
-                      readyState: videoRef.current?.readyState,
-                      currentSrc: videoRef.current?.currentSrc
-                    });
-                  }}
-                  onLoadStart={() => console.log('Video load started')}
-                  onLoadedData={() => console.log('Video data loaded')}
-                  onCanPlay={() => console.log('Video can play')}
                   style={{ width: '100%', maxWidth: '800px', borderRadius: 8 }}
                 >
                   Your browser does not support the video tag.
                 </video>
               </div>
-              <div style={{ marginTop: 16, textAlign: 'center' }}>
-                <Text type="secondary">
-                  Chunk {currentChunkIndex + 1} of {chunks.length}
-                  {!isComplete && ' - Processing continues in background...'}
-                </Text>
-              </div>
             </Card>
           )}
 
-          {/* Events and Commentary Tables - Show after completion */}
           {highlights.length > 0 && !analyzing && (
             <Card
               title={
                 <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
-                  Football Highlights & Events
+                  Football Highlights & Events ({language})
                 </Title>
               }
               style={{ borderRadius: 8, marginBottom: 24 }}
             >
               <div style={{ display: 'flex', gap: '16px' }}>
-                {/* Left Table - Events */}
                 <div style={{ flex: '0 0 45%' }}>
-                  <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>
-                    Detected Events
-                  </Title>
+                  <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>Detected Events</Title>
                   <Table
                     columns={eventsColumns}
                     dataSource={events}
@@ -480,12 +450,8 @@ function App() {
                     size="small"
                   />
                 </div>
-
-                {/* Right Table - Highlights */}
                 <div style={{ flex: '0 0 55%' }}>
-                  <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>
-                    Generated Commentary
-                  </Title>
+                  <Title level={5} style={{ color: '#1e4d2b', marginBottom: 12 }}>Generated Commentary</Title>
                   <Table
                     columns={highlightsColumns}
                     dataSource={highlights}
@@ -498,6 +464,40 @@ function App() {
               </div>
             </Card>
           )}
+
+          {/* NEW SECTION: Feedback / Comments */}
+          <Card
+            title={
+              <Title level={4} style={{ margin: 0, color: '#1e4d2b' }}>
+                Feedback & Comments
+              </Title>
+            }
+            style={{ borderRadius: 8, marginBottom: 24 }}
+          >
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Text>Have suggestions or found an issue? Let us know!</Text>
+              <TextArea
+                rows={4}
+                value={userComment}
+                onChange={(e) => setUserComment(e.target.value)}
+                placeholder="Write your comments here..."
+                maxLength={500}
+                showCount
+              />
+              <div style={{ textAlign: 'right' }}>
+                <Button 
+                  type="primary" 
+                  icon={<SendOutlined />} 
+                  onClick={handleSubmitComment}
+                  loading={submittingComment}
+                  style={{ background: '#1e4d2b', borderColor: '#1e4d2b' }}
+                >
+                  Send Feedback
+                </Button>
+              </div>
+            </Space>
+          </Card>
+
         </div>
       </Content>
 

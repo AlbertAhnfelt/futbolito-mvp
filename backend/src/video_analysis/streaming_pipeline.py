@@ -47,7 +47,7 @@ class StreamingPipeline:
     without the need for sorting, with each chunk arriving as soon as possible.
     """
 
-    def __init__(self, api_key: str, elevenlabs_api_key: Optional[str] = None):
+    def __init__(self, api_key: str, elevenlabs_api_key: Optional[str] = None, language = "English"):
         """
         Initialize streaming pipeline with StateManager integration.
 
@@ -57,6 +57,7 @@ class StreamingPipeline:
         """
         self.api_key = api_key
         self.elevenlabs_api_key = elevenlabs_api_key
+        self.language = language
 
         # StateManager will be initialized per session
         self.state_manager = None
@@ -120,6 +121,7 @@ class StreamingPipeline:
             )
             self.commentary_generator = CommentaryGenerator(
                 api_key=self.api_key,
+                language= self.language,
                 state_manager=self.state_manager,
                 output_dir=session_output_dir
             )
@@ -872,7 +874,7 @@ class StreamingPipeline:
         return max(1, int(self.video_duration / 30))
 
 
-async def streaming_pipeline(filename: str) -> AsyncGenerator[Dict[str, Any], None]:
+async def streaming_pipeline(filename: str,language : str) -> AsyncGenerator[Dict[str, Any], None]:
     """
     Main entry point for streaming pipeline.
 
@@ -884,7 +886,8 @@ async def streaming_pipeline(filename: str) -> AsyncGenerator[Dict[str, Any], No
     """
     pipeline = StreamingPipeline(
         api_key=GEMINI_API_KEY,
-        elevenlabs_api_key=ELEVENLABS_API_KEY
+        elevenlabs_api_key=ELEVENLABS_API_KEY,
+        language= language
     )
 
     async for event in pipeline.process_video_stream(filename):

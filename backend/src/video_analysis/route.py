@@ -8,6 +8,14 @@ from video_analysis.streaming_pipeline import streaming_pipeline
 
 router = APIRouter()
 
+from pydantic import BaseModel
+from typing import Optional
+
+# Define the expected data structure
+class FeedbackRequest(BaseModel):
+    comment: str
+    video: Optional[str] = None
+    timestamp: Optional[str] = None
 
 def list_videos():
     """
@@ -41,8 +49,8 @@ async def get_videos_list():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/analyze-stream/{filename}")
-async def analyze_video_stream(filename: str):
+@router.get("/analyze-stream/{language}/{filename}")
+async def analyze_video_stream(filename: str, language : str):
     """
     Stream video generation progress via Server-Sent Events (SSE).
 
@@ -54,13 +62,14 @@ async def analyze_video_stream(filename: str):
     - complete: All processing finished
     - error: Processing error occurred
     """
+    print(language)
     try:
         if not filename:
             raise HTTPException(status_code=400, detail="No filename provided")
 
         async def event_generator():
             try:
-                async for event in streaming_pipeline(filename):
+                async for event in streaming_pipeline(filename,language):
                     # Format as SSE event
                     yield f"data: {json.dumps(event)}\n\n"
             except Exception as e:
@@ -184,4 +193,31 @@ async def get_events():
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+# file path where feedback will be saved
+FEEDBACK_FILE = "feedback.txt"
 
+@router.post("/feedback")
+def write_feedback(feedback: FeedbackRequest):
+    """
+    Receives user feedback and appends it to a text file.
+    """
+    try:
+        # Create a formatted string for the log
+        # Use provided timestamp or fallback to current system time if needed
+        time_str = feedback.timestamp if feedback.timestamp else "Unknown Time"
+        video_str = f"[{feedback.video}]" if feedback.video else "[No Video]"
+        
+        entry = f"Time: {time_str} | Video: {video_str} | Comment: {feedback.comment}\n"
+        
+        # Open the file in 'a' (append) mode so we don't overwrite previous comments
+        # encoding='utf-8' is important for handling special characters/emojis
+        with open(FEEDBACK_FILE, "a", encoding="utf-8") as f:
+            f.write(entry)
+            f.write("-" * 50 + "\n") # Add a separator line
+            
+        return {"status": "success", "message": "Feedback saved successfully"}
+
+    except Exception as e:
+        print(f"Error saving feedback: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save feedback: {str(e)}")
